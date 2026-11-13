@@ -1,0 +1,15 @@
+# =============================================================================
+# Capital Chowdary Matrimony — Cloudflare Worker Development Secrets (.dev.vars)
+# Copy this file to `.dev.vars` for local Wrangler / Cloudflare Worker execution.
+# In Cloudflare production, configure these via `wrangler secret put <NAME>` or Cloudflare dashboard.
+# =============================================================================
+
+AUTH_SESSION_SECRET=replace-with-a-minimum-32-character-random-secret
+ADMIN_SESSION_COOKIE_NAME=ccm_admin_session
+
+# Centralized Cloudinary Image Management
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
+CLOUDINARY_UPLOAD_FOLDER=capital-chowdary-matrimony
+

@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "capital-chowdary-matrimony",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "capital-chowdary-matrimony",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "capital-chowdary-matrimony",
+      "database_id": "284719c8-e83b-4289-8f4d-73b1b464766e",
+      "migrations_dir": "src/db/migrations",
+    },
+  ],
+  "observability": {
+    "enabled": true,
+  },
+}

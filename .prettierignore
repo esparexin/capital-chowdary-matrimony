@@ -1,0 +1,11 @@
+.next/
+.open-next/
+.wrangler/
+node_modules/
+pnpm-lock.yaml
+coverage/
+next-env.d.ts
+cloudflare-env.d.ts
+src/db/migrations/*.sql
+src/db/migrations/meta/
+

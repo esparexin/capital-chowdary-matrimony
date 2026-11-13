@@ -1,0 +1,50 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.*
+.pnpm-store/
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# OpenNext & Cloudflare
+/.open-next/
+/.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+cloudflare-env.d.ts
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+
+# Local image assets - use Cloudinary-hosted images
+/ccm-logo.png
+
+# Additional local secrets
+.env.production
+.env.production.local
