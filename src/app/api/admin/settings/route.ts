@@ -38,9 +38,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<SiteSettings>>> {
   }
 }
 
-export async function PATCH(
-  request: Request,
-): Promise<NextResponse<ApiResponse<SiteSettings>>> {
+export async function PATCH(request: Request): Promise<NextResponse<ApiResponse<SiteSettings>>> {
   try {
     const admin = await requireAuthenticatedAdmin();
     const rawBody = await request.json();
@@ -80,10 +78,7 @@ export async function PATCH(
       updatedAt: now,
     };
 
-    await db
-      .update(siteSettings)
-      .set(updatedValues)
-      .where(eq(siteSettings.id, "default"));
+    await db.update(siteSettings).set(updatedValues).where(eq(siteSettings.id, "default"));
 
     // Record audit revision
     await db.insert(contentRevisions).values({

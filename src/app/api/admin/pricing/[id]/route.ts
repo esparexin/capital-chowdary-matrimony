@@ -24,11 +24,7 @@ export async function PATCH(
     const parsed = updatePricingPlanSchema.parse(rawBody);
 
     const db = await getDatabase();
-    const [existing] = await db
-      .select()
-      .from(pricingPlans)
-      .where(eq(pricingPlans.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(pricingPlans).where(eq(pricingPlans.id, id)).limit(1);
 
     if (!existing) {
       throw new AppError("Pricing plan not found.", 404, "NOT_FOUND");
@@ -54,13 +50,17 @@ export async function PATCH(
     if (parsed.slug !== undefined) updates.slug = parsed.slug;
     if (parsed.categoryEn !== undefined) updates.categoryEn = parsed.categoryEn;
     if (parsed.categoryTe !== undefined) updates.categoryTe = parsed.categoryTe;
-    if (parsed.registrationFeeInr !== undefined) updates.registrationFeeInr = parsed.registrationFeeInr;
-    if (parsed.maleCommissionInr !== undefined) updates.maleCommissionInr = parsed.maleCommissionInr;
-    if (parsed.femaleCommissionInr !== undefined) updates.femaleCommissionInr = parsed.femaleCommissionInr;
+    if (parsed.registrationFeeInr !== undefined)
+      updates.registrationFeeInr = parsed.registrationFeeInr;
+    if (parsed.maleCommissionInr !== undefined)
+      updates.maleCommissionInr = parsed.maleCommissionInr;
+    if (parsed.femaleCommissionInr !== undefined)
+      updates.femaleCommissionInr = parsed.femaleCommissionInr;
     if (parsed.validityMonths !== undefined) updates.validityMonths = parsed.validityMonths;
     if (parsed.termsEn !== undefined) updates.termsEn = parsed.termsEn;
     if (parsed.termsTe !== undefined) updates.termsTe = parsed.termsTe;
-    if (parsed.verificationStatus !== undefined) updates.verificationStatus = parsed.verificationStatus;
+    if (parsed.verificationStatus !== undefined)
+      updates.verificationStatus = parsed.verificationStatus;
     if (parsed.sortOrder !== undefined) updates.sortOrder = parsed.sortOrder;
 
     if (parsed.status !== undefined) {
@@ -74,9 +74,12 @@ export async function PATCH(
 
     await db.update(pricingPlans).set(updates).where(eq(pricingPlans.id, id));
 
-    const action = parsed.status && parsed.status !== existing.status
-      ? parsed.status === "published" ? "publish" : "unpublish"
-      : "update";
+    const action =
+      parsed.status && parsed.status !== existing.status
+        ? parsed.status === "published"
+          ? "publish"
+          : "unpublish"
+        : "update";
 
     await db.insert(contentRevisions).values({
       id: crypto.randomUUID(),
@@ -88,11 +91,7 @@ export async function PATCH(
       createdAt: now,
     });
 
-    const [updated] = await db
-      .select()
-      .from(pricingPlans)
-      .where(eq(pricingPlans.id, id))
-      .limit(1);
+    const [updated] = await db.select().from(pricingPlans).where(eq(pricingPlans.id, id)).limit(1);
 
     const response = NextResponse.json<ApiResponse<PricingPlan>>({
       ok: true,
@@ -117,11 +116,7 @@ export async function DELETE(
     const { id } = await params;
 
     const db = await getDatabase();
-    const [existing] = await db
-      .select()
-      .from(pricingPlans)
-      .where(eq(pricingPlans.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(pricingPlans).where(eq(pricingPlans.id, id)).limit(1);
 
     if (!existing) {
       throw new AppError("Pricing plan not found.", 404, "NOT_FOUND");

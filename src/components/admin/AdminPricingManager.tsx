@@ -37,7 +37,8 @@ export function AdminPricingManager({ initialPlans }: AdminPricingManagerProps) 
     maleCommissionInr: 250000,
     femaleCommissionInr: 150000,
     validityMonths: 11,
-    termsEn: "11-month non-refundable registration fee. Two-instalment commission upon alliance finalisation.",
+    termsEn:
+      "11-month non-refundable registration fee. Two-instalment commission upon alliance finalisation.",
     termsTe: "11 నెలల వ్యవధి గల రిజిస్ట్రేషన్ రుసుము వాపసు చేయబడదు. సంబంధం కుదిరిన తర్వాత రెండు విడతలలో చెల్లింపు.",
     verificationStatus: "verified" as "pending_review" | "verified",
     sortOrder: 0,
@@ -54,7 +55,8 @@ export function AdminPricingManager({ initialPlans }: AdminPricingManagerProps) 
       maleCommissionInr: 250000,
       femaleCommissionInr: 150000,
       validityMonths: 11,
-      termsEn: "11-month non-refundable registration fee. Two-instalment commission upon alliance finalisation.",
+      termsEn:
+        "11-month non-refundable registration fee. Two-instalment commission upon alliance finalisation.",
       termsTe: "11 నెలల వ్యవధి గల రిజిస్ట్రేషన్ రుసుము వాపసు చేయబడదు. సంబంధం కుదిరిన తర్వాత రెండు విడతలలో చెల్లింపు.",
       verificationStatus: "verified",
       sortOrder: (plansList.length + 1) * 10,
@@ -115,9 +117,7 @@ export function AdminPricingManager({ initialPlans }: AdminPricingManagerProps) 
       }
 
       if (isEditing) {
-        setPlansList((prev) =>
-          prev.map((it) => (it.id === editingId ? json.data : it)),
-        );
+        setPlansList((prev) => prev.map((it) => (it.id === editingId ? json.data : it)));
         setSuccessMessage("Pricing plan updated successfully.");
       } else {
         setPlansList((prev) => [...prev, json.data]);
@@ -478,9 +478,7 @@ export function AdminPricingManager({ initialPlans }: AdminPricingManagerProps) 
                     <span className="text-[11px] text-muted-foreground">({plan.categoryTe})</span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        isPublished
-                          ? "bg-emerald-600 text-white"
-                          : "bg-amber-600 text-white"
+                        isPublished ? "bg-emerald-600 text-white" : "bg-amber-600 text-white"
                       }`}
                     >
                       {isPublished ? "Live" : "Draft"}
@@ -505,9 +503,7 @@ export function AdminPricingManager({ initialPlans }: AdminPricingManagerProps) 
                     </span>
                   </div>
 
-                  <p className="line-clamp-1 text-[11px] text-muted-foreground">
-                    {plan.termsEn}
-                  </p>
+                  <p className="line-clamp-1 text-[11px] text-muted-foreground">{plan.termsEn}</p>
                 </div>
 
                 <div className="flex items-center gap-1.5 self-end sm:self-center">

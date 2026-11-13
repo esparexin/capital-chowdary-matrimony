@@ -15,8 +15,14 @@ export const updateSiteSettingsSchema = z.object({
   mapUrl: z.string().trim().url("Valid map URL is required").or(z.literal("")),
   defaultSeoTitleEn: z.string().trim().min(2, "Default SEO title (English) is required"),
   defaultSeoTitleTe: z.string().trim().min(2, "Default SEO title (Telugu) is required"),
-  defaultSeoDescriptionEn: z.string().trim().min(10, "Default SEO description (English) must be at least 10 characters"),
-  defaultSeoDescriptionTe: z.string().trim().min(10, "Default SEO description (Telugu) must be at least 10 characters"),
+  defaultSeoDescriptionEn: z
+    .string()
+    .trim()
+    .min(10, "Default SEO description (English) must be at least 10 characters"),
+  defaultSeoDescriptionTe: z
+    .string()
+    .trim()
+    .min(10, "Default SEO description (Telugu) must be at least 10 characters"),
   isContactVerified: z.boolean().default(false),
 });
 

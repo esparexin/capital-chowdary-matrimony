@@ -29,7 +29,8 @@ export default async function AdminPricingPage() {
           Pricing Plans &amp; Fee Tiers
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Configure matrimonial category registration fees, commissions, 11-month validity rules, and public visibility.
+          Configure matrimonial category registration fees, commissions, 11-month validity rules,
+          and public visibility.
         </p>
       </div>
 

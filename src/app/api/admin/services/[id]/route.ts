@@ -24,11 +24,7 @@ export async function PATCH(
     const parsed = updateServiceSchema.parse(rawBody);
 
     const db = await getDatabase();
-    const [existing] = await db
-      .select()
-      .from(services)
-      .where(eq(services.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(services).where(eq(services.id, id)).limit(1);
 
     if (!existing) {
       throw new AppError("Service not found.", 404, "NOT_FOUND");
@@ -70,9 +66,12 @@ export async function PATCH(
 
     await db.update(services).set(updates).where(eq(services.id, id));
 
-    const action = parsed.status && parsed.status !== existing.status
-      ? parsed.status === "published" ? "publish" : "unpublish"
-      : "update";
+    const action =
+      parsed.status && parsed.status !== existing.status
+        ? parsed.status === "published"
+          ? "publish"
+          : "unpublish"
+        : "update";
 
     await db.insert(contentRevisions).values({
       id: crypto.randomUUID(),
@@ -84,11 +83,7 @@ export async function PATCH(
       createdAt: now,
     });
 
-    const [updated] = await db
-      .select()
-      .from(services)
-      .where(eq(services.id, id))
-      .limit(1);
+    const [updated] = await db.select().from(services).where(eq(services.id, id)).limit(1);
 
     const response = NextResponse.json<ApiResponse<Service>>({
       ok: true,
@@ -113,11 +108,7 @@ export async function DELETE(
     const { id } = await params;
 
     const db = await getDatabase();
-    const [existing] = await db
-      .select()
-      .from(services)
-      .where(eq(services.id, id))
-      .limit(1);
+    const [existing] = await db.select().from(services).where(eq(services.id, id)).limit(1);
 
     if (!existing) {
       throw new AppError("Service not found.", 404, "NOT_FOUND");

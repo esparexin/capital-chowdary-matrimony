@@ -35,7 +35,8 @@ function buildSeedSql(): string {
 
   // 1. Site Settings
   const st = DEFAULT_SITE_SETTINGS;
-  statements.push(`
+  statements.push(
+    `
 INSERT INTO site_settings (
   id, business_name_en, business_name_te, tagline_en, tagline_te,
   location_en, location_te, address_en, address_te,
@@ -52,11 +53,13 @@ INSERT INTO site_settings (
   ${sqlVal(st.defaultSeoDescriptionEn)}, ${sqlVal(st.defaultSeoDescriptionTe)},
   ${sqlVal(st.isContactVerified ?? false)}, ${sqlVal(st.createdAt ?? now)}, ${sqlVal(st.updatedAt ?? now)}
 ) ON CONFLICT(id) DO NOTHING;
-`.trim());
+`.trim(),
+  );
 
   // 2. Pages
   for (const page of DEFAULT_PAGES) {
-    statements.push(`
+    statements.push(
+      `
 INSERT INTO pages (
   id, slug, title_en, title_te, summary_en, summary_te,
   body_en, body_te, seo_title_en, seo_title_te,
@@ -73,12 +76,14 @@ INSERT INTO pages (
   ${sqlVal(page.verificationNoteEn ?? "")}, ${sqlVal(page.verificationNoteTe ?? "")},
   ${sqlVal(page.publishedAt ?? null)}, ${sqlVal(page.createdAt ?? now)}, ${sqlVal(page.updatedAt ?? now)}
 ) ON CONFLICT(id) DO NOTHING;
-`.trim());
+`.trim(),
+    );
   }
 
   // 3. Content Sections
   for (const section of DEFAULT_CONTENT_SECTIONS) {
-    statements.push(`
+    statements.push(
+      `
 INSERT INTO content_sections (
   id, page_id, section_key, title_en, title_te,
   subtitle_en, subtitle_te, body_en, body_te,
@@ -93,12 +98,14 @@ INSERT INTO content_sections (
   ${sqlVal(section.sortOrder ?? 0)}, ${sqlVal(section.status ?? "draft")},
   ${sqlVal(section.publishedAt ?? null)}, ${sqlVal(section.createdAt ?? now)}, ${sqlVal(section.updatedAt ?? now)}
 ) ON CONFLICT(id) DO NOTHING;
-`.trim());
+`.trim(),
+    );
   }
 
   // 4. Services
   for (const service of DEFAULT_SERVICES) {
-    statements.push(`
+    statements.push(
+      `
 INSERT INTO services (
   id, slug, title_en, title_te, description_en, description_te,
   icon_name, sort_order, status, published_at, created_at, updated_at
@@ -109,12 +116,14 @@ INSERT INTO services (
   ${sqlVal(service.status ?? "draft")}, ${sqlVal(service.publishedAt ?? null)},
   ${sqlVal(service.createdAt ?? now)}, ${sqlVal(service.updatedAt ?? now)}
 ) ON CONFLICT(id) DO NOTHING;
-`.trim());
+`.trim(),
+    );
   }
 
   // 5. Pricing Plans
   for (const plan of DEFAULT_PRICING_PLANS) {
-    statements.push(`
+    statements.push(
+      `
 INSERT INTO pricing_plans (
   id, slug, category_en, category_te, registration_fee_inr,
   male_commission_inr, female_commission_inr, validity_months,
@@ -128,7 +137,8 @@ INSERT INTO pricing_plans (
   ${sqlVal(plan.status ?? "draft")}, ${sqlVal(plan.publishedAt ?? null)},
   ${sqlVal(plan.createdAt ?? now)}, ${sqlVal(plan.updatedAt ?? now)}
 ) ON CONFLICT(id) DO NOTHING;
-`.trim());
+`.trim(),
+    );
   }
 
   return statements.join("\n\n");
@@ -157,14 +167,7 @@ async function main() {
     console.log(`Executing seed batch on Cloudflare D1 (${targetFlag})...`);
     execFileSync(
       "npx",
-      [
-        "wrangler",
-        "d1",
-        "execute",
-        "capital-chowdary-matrimony",
-        targetFlag,
-        `--file=${tmpFile}`,
-      ],
+      ["wrangler", "d1", "execute", "capital-chowdary-matrimony", targetFlag, `--file=${tmpFile}`],
       { stdio: "inherit" },
     );
     console.log("\nDefault content seeded successfully into Cloudflare D1!");

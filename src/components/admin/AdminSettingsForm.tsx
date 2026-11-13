@@ -34,9 +34,7 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
@@ -61,16 +59,12 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
 
       const json = (await res.json()) as ApiResponse<SiteSettings>;
       if (!res.ok || !json.ok) {
-        throw new Error(
-          !json.ok ? json.error.message : "Failed to update site settings.",
-        );
+        throw new Error(!json.ok ? json.error.message : "Failed to update site settings.");
       }
 
       setSuccessMessage("Site settings updated successfully.");
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "An unexpected error occurred.",
-      );
+      setErrorMessage(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
       setIsSaving(false);
     }
@@ -294,7 +288,10 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label htmlFor="defaultSeoTitleEn" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="defaultSeoTitleEn"
+              className="block text-xs font-medium text-foreground"
+            >
               Default SEO Title (English)
             </label>
             <input
@@ -309,7 +306,10 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
           </div>
 
           <div>
-            <label htmlFor="defaultSeoTitleTe" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="defaultSeoTitleTe"
+              className="block text-xs font-medium text-foreground"
+            >
               Default SEO Title (Telugu)
             </label>
             <input
@@ -324,7 +324,10 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
           </div>
 
           <div className="sm:col-span-2">
-            <label htmlFor="defaultSeoDescriptionEn" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="defaultSeoDescriptionEn"
+              className="block text-xs font-medium text-foreground"
+            >
               Default SEO Description (English)
             </label>
             <textarea
@@ -339,7 +342,10 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
           </div>
 
           <div className="sm:col-span-2">
-            <label htmlFor="defaultSeoDescriptionTe" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="defaultSeoDescriptionTe"
+              className="block text-xs font-medium text-foreground"
+            >
               Default SEO Description (Telugu)
             </label>
             <textarea
@@ -362,11 +368,7 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
           disabled={isSaving}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
         >
-          {isSaving ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Save className="size-4" />
-          )}
+          {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {isSaving ? "Saving Settings..." : "Save Settings"}
         </button>
       </div>

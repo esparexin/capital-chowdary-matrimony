@@ -33,9 +33,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<PricingPlan[]>>> {
   }
 }
 
-export async function POST(
-  request: Request,
-): Promise<NextResponse<ApiResponse<PricingPlan>>> {
+export async function POST(request: Request): Promise<NextResponse<ApiResponse<PricingPlan>>> {
   try {
     const admin = await requireAuthenticatedAdmin();
     const rawBody = await request.json();

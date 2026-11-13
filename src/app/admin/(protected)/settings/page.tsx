@@ -35,7 +35,8 @@ export default async function AdminSettingsPage() {
           Site Settings
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage business identity, office address, WhatsApp contact channels, and default SEO configuration.
+          Manage business identity, office address, WhatsApp contact channels, and default SEO
+          configuration.
         </p>
       </div>
 

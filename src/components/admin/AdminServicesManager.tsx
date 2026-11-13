@@ -108,9 +108,7 @@ export function AdminServicesManager({ initialServices }: AdminServicesManagerPr
       }
 
       if (isEditing) {
-        setServicesList((prev) =>
-          prev.map((it) => (it.id === editingId ? json.data : it)),
-        );
+        setServicesList((prev) => prev.map((it) => (it.id === editingId ? json.data : it)));
         setSuccessMessage("Service updated successfully.");
       } else {
         setServicesList((prev) => [...prev, json.data]);
@@ -418,9 +416,7 @@ export function AdminServicesManager({ initialServices }: AdminServicesManagerPr
                       <span className="text-[11px] text-muted-foreground">({svc.titleTe})</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          isPublished
-                            ? "bg-emerald-600 text-white"
-                            : "bg-amber-600 text-white"
+                          isPublished ? "bg-emerald-600 text-white" : "bg-amber-600 text-white"
                         }`}
                       >
                         {isPublished ? "Live" : "Draft"}
@@ -430,7 +426,8 @@ export function AdminServicesManager({ initialServices }: AdminServicesManagerPr
                       {svc.descriptionEn}
                     </p>
                     <div className="text-[10px] text-muted-foreground">
-                      Slug: <span className="font-mono">{svc.slug}</span> &middot; Sort: {svc.sortOrder}
+                      Slug: <span className="font-mono">{svc.slug}</span> &middot; Sort:{" "}
+                      {svc.sortOrder}
                     </div>
                   </div>
                 </div>

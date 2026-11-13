@@ -86,7 +86,10 @@ describe("admin settings API routes", () => {
     const response = await patchSettingsHandler(request);
     expect(response.status).toBe(200);
 
-    const json = (await response.json()) as { ok: boolean; data: { businessNameEn: string; whatsappNumber: string } };
+    const json = (await response.json()) as {
+      ok: boolean;
+      data: { businessNameEn: string; whatsappNumber: string };
+    };
     expect(json.ok).toBe(true);
     expect(json.data.businessNameEn).toBe("Capital Chowdary Matrimony Updated");
     expect(json.data.whatsappNumber).toBe("+91 99999 88888");
