@@ -18,7 +18,9 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply capital-chowdary-matrimony --local",
-    "db:migrate:remote": "wrangler d1 migrations apply capital-chowdary-matrimony --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply capital-chowdary-matrimony --remote",
+    "db:seed:local": "tsx scripts/seed-d1.ts --local",
+    "db:seed:remote": "tsx scripts/seed-d1.ts --remote"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.6",
