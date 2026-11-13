@@ -52,12 +52,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<AdminHomepageHeroD
       })
       .from(contentSections)
       .leftJoin(mediaAssets, eq(contentSections.mediaAssetId, mediaAssets.id))
-      .where(
-        and(
-          eq(contentSections.pageId, "page-home"),
-          eq(contentSections.sectionKey, "hero"),
-        ),
-      )
+      .where(and(eq(contentSections.pageId, "page-home"), eq(contentSections.sectionKey, "hero")))
       .limit(1);
 
     if (!row) {
@@ -141,12 +136,7 @@ export async function PATCH(
       })
       .from(contentSections)
       .leftJoin(mediaAssets, eq(contentSections.mediaAssetId, mediaAssets.id))
-      .where(
-        and(
-          eq(contentSections.pageId, "page-home"),
-          eq(contentSections.sectionKey, "hero"),
-        ),
-      )
+      .where(and(eq(contentSections.pageId, "page-home"), eq(contentSections.sectionKey, "hero")))
       .limit(1);
 
     if (!existing) {
@@ -206,10 +196,7 @@ export async function PATCH(
       updatedAt: now,
     };
 
-    await db
-      .update(contentSections)
-      .set(updates)
-      .where(eq(contentSections.id, existing.id));
+    await db.update(contentSections).set(updates).where(eq(contentSections.id, existing.id));
 
     await db.insert(contentRevisions).values({
       id: crypto.randomUUID(),

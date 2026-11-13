@@ -48,12 +48,7 @@ export default async function AdminHomepagePage() {
       })
       .from(contentSections)
       .leftJoin(mediaAssets, eq(contentSections.mediaAssetId, mediaAssets.id))
-      .where(
-        and(
-          eq(contentSections.pageId, "page-home"),
-          eq(contentSections.sectionKey, "hero"),
-        ),
-      )
+      .where(and(eq(contentSections.pageId, "page-home"), eq(contentSections.sectionKey, "hero")))
       .limit(1);
 
     if (row) {
@@ -119,7 +114,8 @@ export default async function AdminHomepagePage() {
           Homepage Sections &amp; Banners
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage homepage hero copy, Telugu introduction banner, highlights, calls to action, and Cloudinary imagery.
+          Manage homepage hero copy, Telugu introduction banner, highlights, calls to action, and
+          Cloudinary imagery.
         </p>
       </div>
 

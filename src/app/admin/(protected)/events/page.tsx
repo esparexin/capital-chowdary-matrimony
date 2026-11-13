@@ -50,7 +50,8 @@ export default async function AdminEventsPage() {
           Marriage Events
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage upcoming matrimonial gatherings, parichaya vedika schedules, and Cloudinary cover imagery.
+          Manage upcoming matrimonial gatherings, parichaya vedika schedules, and Cloudinary cover
+          imagery.
         </p>
       </div>
 

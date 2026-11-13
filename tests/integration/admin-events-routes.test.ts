@@ -68,7 +68,10 @@ describe("admin marriage events API routes", () => {
     const response = await getEventsHandler();
     expect(response.status).toBe(200);
 
-    const json = (await response.json()) as { ok: boolean; data: Array<{ titleEn: string; coverUrl: string }> };
+    const json = (await response.json()) as {
+      ok: boolean;
+      data: Array<{ titleEn: string; coverUrl: string }>;
+    };
     expect(json.ok).toBe(true);
     expect(json.data).toHaveLength(1);
     expect(json.data[0]?.titleEn).toBe("Parichaya Vedika 2026");

@@ -47,7 +47,12 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
   const [highlights, setHighlights] = useState<Array<{ title: string; description: string }>>(
     initialData.highlights.length > 0
       ? initialData.highlights
-      : [{ title: "Andhra Pradesh & Telangana", description: "Alliances across both Telugu states" }],
+      : [
+          {
+            title: "Andhra Pradesh & Telangana",
+            description: "Alliances across both Telugu states",
+          },
+        ],
   );
 
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -118,13 +123,10 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
         uploadBody.append("signature", signature);
         uploadBody.append("folder", folder);
 
-        const cldRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: uploadBody,
-          },
-        );
+        const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: "POST",
+          body: uploadBody,
+        });
         const cldJson = (await cldRes.json()) as CloudinaryUploadResponse;
 
         if (!cldRes.ok) {
@@ -201,7 +203,8 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
             Hero Heading &amp; Introduction
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Topmost heading, verified Telugu introduction banner, and primary description on the public homepage.
+            Topmost heading, verified Telugu introduction banner, and primary description on the
+            public homepage.
           </p>
         </div>
 
@@ -291,7 +294,10 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
           </div>
 
           <div>
-            <label htmlFor="primary-cta-label" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="primary-cta-label"
+              className="block text-xs font-medium text-foreground"
+            >
               Primary Button Label
             </label>
             <input
@@ -319,7 +325,10 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
           </div>
 
           <div>
-            <label htmlFor="secondary-cta-label" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="secondary-cta-label"
+              className="block text-xs font-medium text-foreground"
+            >
               Secondary Button Label
             </label>
             <input
@@ -333,7 +342,10 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
           </div>
 
           <div>
-            <label htmlFor="secondary-cta-href" className="block text-xs font-medium text-foreground">
+            <label
+              htmlFor="secondary-cta-href"
+              className="block text-xs font-medium text-foreground"
+            >
               Secondary Button URL
             </label>
             <input
@@ -484,7 +496,8 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
                   className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-secondary-foreground hover:file:bg-secondary/80"
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Uploads directly to Cloudinary folder <span className="font-mono">banners</span>. Recommended size: 1200x896px. Max 5MB.
+                  Uploads directly to Cloudinary folder <span className="font-mono">banners</span>.
+                  Recommended size: 1200x896px. Max 5MB.
                 </p>
               </div>
             </div>
@@ -499,11 +512,7 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
           disabled={isSaving}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 disabled:opacity-50"
         >
-          {isSaving ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Save className="size-4" />
-          )}
+          {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
           {isSaving ? "Saving Hero Section..." : "Save Hero Section"}
         </button>
       </div>

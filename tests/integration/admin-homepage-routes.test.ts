@@ -66,7 +66,10 @@ describe("admin homepage API routes", () => {
     const response = await getHomepageHandler();
     expect(response.status).toBe(200);
 
-    const json = (await response.json()) as { ok: boolean; data: { titleEn: string; primaryCtaLabelEn: string } };
+    const json = (await response.json()) as {
+      ok: boolean;
+      data: { titleEn: string; primaryCtaLabelEn: string };
+    };
     expect(json.ok).toBe(true);
     expect(json.data.titleEn).toBe("Trusted marriage alliances for Kamma families");
     expect(json.data.primaryCtaLabelEn).toBe("Register");
@@ -105,12 +108,7 @@ describe("admin homepage API routes", () => {
     const [persisted] = await activeTestDb
       .select()
       .from(contentSections)
-      .where(
-        and(
-          eq(contentSections.pageId, "page-home"),
-          eq(contentSections.sectionKey, "hero"),
-        ),
-      );
+      .where(and(eq(contentSections.pageId, "page-home"), eq(contentSections.sectionKey, "hero")));
     expect(persisted?.titleEn).toBe("Exclusive Kamma Matrimonial Services");
 
     // Verify revision

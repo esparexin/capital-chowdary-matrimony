@@ -161,13 +161,10 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
         uploadBody.append("signature", signature);
         uploadBody.append("folder", folder);
 
-        const cldRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: uploadBody,
-          },
-        );
+        const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: "POST",
+          body: uploadBody,
+        });
         const cldJson = (await cldRes.json()) as CloudinaryUploadResponse;
 
         if (!cldRes.ok) {
@@ -209,9 +206,7 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
       }
 
       if (isEditing) {
-        setEventsList((prev) =>
-          prev.map((it) => (it.id === editingId ? json.data : it)),
-        );
+        setEventsList((prev) => prev.map((it) => (it.id === editingId ? json.data : it)));
         setSuccessMessage("Marriage event updated successfully.");
       } else {
         setEventsList((prev) => [json.data, ...prev]);
@@ -612,9 +607,7 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
                       <span className="text-[11px] text-muted-foreground">({ev.titleTe})</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          isPublished
-                            ? "bg-emerald-600 text-white"
-                            : "bg-amber-600 text-white"
+                          isPublished ? "bg-emerald-600 text-white" : "bg-amber-600 text-white"
                         }`}
                       >
                         {isPublished ? "Live" : "Draft"}
