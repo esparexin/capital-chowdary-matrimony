@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { getDatabase } from "@/db";
-import { galleryItems, mediaAssets } from "@/db/schema";
+import { contentRevisions, galleryItems, mediaAssets } from "@/db/schema";
 import { requireAuthenticatedAdmin } from "@/lib/auth/session-guard";
 import { applySecurityHeaders } from "@/lib/security/security-headers";
 import { toApiErrorResponse } from "@/lib/utils/error-handler";
@@ -11,6 +11,7 @@ import type { ApiResponse } from "@/types/api-response";
 export interface AdminGalleryItemRecord {
   id: string;
   mediaAssetId: string;
+  eventId: string | null;
   captionEn: string;
   captionTe: string;
   sortOrder: number;
@@ -34,6 +35,7 @@ export async function GET(): Promise<NextResponse<ApiResponse<AdminGalleryItemRe
       .select({
         id: galleryItems.id,
         mediaAssetId: galleryItems.mediaAssetId,
+        eventId: galleryItems.eventId,
         captionEn: galleryItems.captionEn,
         captionTe: galleryItems.captionTe,
         sortOrder: galleryItems.sortOrder,
@@ -98,9 +100,12 @@ export async function POST(
       uploadedByAdminId: user.id,
     });
 
+    const eventId = parsed.eventId?.trim() ? parsed.eventId.trim() : null;
+
     await db.insert(galleryItems).values({
       id: galleryItemId,
       mediaAssetId,
+      eventId,
       captionEn: parsed.captionEn,
       captionTe: parsed.captionTe,
       sortOrder,
@@ -111,6 +116,7 @@ export async function POST(
     const createdRecord: AdminGalleryItemRecord = {
       id: galleryItemId,
       mediaAssetId,
+      eventId,
       captionEn: parsed.captionEn,
       captionTe: parsed.captionTe,
       sortOrder,
@@ -124,6 +130,16 @@ export async function POST(
       bytes: parsed.bytes ?? null,
       format: parsed.format ?? "jpg",
     };
+
+    await db.insert(contentRevisions).values({
+      id: crypto.randomUUID(),
+      entityType: "gallery_item",
+      entityId: galleryItemId,
+      action: "create",
+      snapshotJson: JSON.stringify(createdRecord),
+      changedByAdminId: user.id,
+      createdAt: nowIso,
+    });
 
     const response = NextResponse.json<ApiResponse<AdminGalleryItemRecord>>(
       { ok: true, data: createdRecord },

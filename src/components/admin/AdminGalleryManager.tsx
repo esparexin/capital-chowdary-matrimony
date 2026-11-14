@@ -7,11 +7,18 @@ import { AdminGalleryCard } from "@/components/admin/AdminGalleryCard";
 import { AdminGalleryUploadForm } from "@/components/admin/AdminGalleryUploadForm";
 import type { ApiResponse } from "@/types/api-response";
 
-interface AdminGalleryManagerProps {
-  initialItems: AdminGalleryItemRecord[];
+export interface AvailableEventOption {
+  id: string;
+  titleEn: string;
+  titleTe: string;
 }
 
-export function AdminGalleryManager({ initialItems }: AdminGalleryManagerProps) {
+interface AdminGalleryManagerProps {
+  initialItems: AdminGalleryItemRecord[];
+  availableEvents?: AvailableEventOption[];
+}
+
+export function AdminGalleryManager({ initialItems, availableEvents }: AdminGalleryManagerProps) {
   const [items, setItems] = useState<AdminGalleryItemRecord[]>(initialItems);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -132,6 +139,7 @@ export function AdminGalleryManager({ initialItems }: AdminGalleryManagerProps) 
       ) : null}
 
       <AdminGalleryUploadForm
+        availableEvents={availableEvents}
         onUploadSuccess={handleUploadSuccess}
         onError={setErrorMessage}
         onSuccess={setSuccessMessage}

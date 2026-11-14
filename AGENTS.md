@@ -20,6 +20,7 @@
 ## 2. Directory Navigation & Search Exclusions
 
 ### Never Scan the Following Directories
+
 - `.next/` (Build artifacts, Turbopack cache, traces)
 - `.open-next/` (Worker bundle output)
 - `node_modules/` (Dependencies — 50,000+ files)
@@ -27,13 +28,16 @@
 - `coverage/` / `.vitest/` (Test outputs)
 
 ### Large Generated Files to Ignore During Audits
+
 - `cloudflare-env.d.ts` (626 KB generated Cloudflare types)
 - `tsconfig.tsbuildinfo` (TypeScript incremental build cache)
 - `ccm-logo.png` (Local binary logo asset)
 
 ### Search Best Practice
+
 **NEVER execute unconstrained root searches** such as `grep -rn "keyword" .` or `find .`.
 Always target specific source directories:
+
 ```bash
 grep -rn "keyword" src tests scripts docs
 find src tests scripts docs -type f
@@ -80,13 +84,14 @@ find src tests scripts docs -type f
 - **Full Test Suite:** `npm test` (~3.0s, 28 test suites, 115 tests)
 - **Type Checking:** `npm run typecheck` (~1.9s)
 - **Production Build:** `npm run build` (~5.8s)
-  *Note:* In sandboxed terminal environments, Next.js / `@opennextjs/cloudflare` requires permission to access Wrangler preference logs at `~/Library/Preferences/.wrangler`. If sandboxed, run with sandbox bypass or rely on `npm run typecheck` + `npm test` for fast intermediate gates.
+  _Note:_ In sandboxed terminal environments, Next.js / `@opennextjs/cloudflare` requires permission to access Wrangler preference logs at `~/Library/Preferences/.wrangler`. If sandboxed, run with sandbox bypass or rely on `npm run typecheck` + `npm test` for fast intermediate gates.
 
 ---
 
 ## 6. Standard Task Report Schema
 
 For all completed tasks, provide this structured report:
+
 - **Objective:** What was requested and solved.
 - **Files Inspected:** Paths of files read.
 - **Files Modified:** Paths of files created or edited.
