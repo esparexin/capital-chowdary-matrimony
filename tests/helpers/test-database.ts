@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { drizzle } from "drizzle-orm/d1";
+import type { D1Database } from "@cloudflare/workers-types";
 import type { AppDatabase } from "@/db";
 import * as schema from "@/db/schema";
 

@@ -22,6 +22,25 @@
       "migrations_dir": "src/db/migrations",
     },
   ],
+  "vars": {
+    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "mmdlzn5o",
+    "CLOUDINARY_UPLOAD_FOLDER": "capital-chowdary-matrimony",
+    "ADMIN_SESSION_COOKIE_NAME": "ccm_admin_session",
+  },
+  "previews": {
+    "vars": {
+      "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "mmdlzn5o",
+      "CLOUDINARY_UPLOAD_FOLDER": "capital-chowdary-matrimony",
+      "ADMIN_SESSION_COOKIE_NAME": "ccm_admin_session",
+    },
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "capital-chowdary-matrimony",
+        "database_id": "284719c8-e83b-4289-8f4d-73b1b464766e",
+      },
+    ],
+  },
   "observability": {
     "enabled": true,
   },

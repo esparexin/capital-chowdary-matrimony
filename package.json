@@ -2,12 +2,14 @@
   "name": "capital-chowdary-matrimony",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.2.2",
   "description": "Informational matrimonial platform and private content-management dashboard for Capital Chowdary Matrimony.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "opennextjs-cloudflare build",
+    "build:next": "next build",
     "build:worker": "opennextjs-cloudflare build",
+    "start": "next start",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
@@ -24,7 +26,9 @@
     "check:governance": "node scripts/governance/check-all.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply capital-chowdary-matrimony --local",
-    "db:migrate:remote": "wrangler d1 migrations apply capital-chowdary-matrimony --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply capital-chowdary-matrimony --remote",
+    "db:seed:local": "tsx scripts/seed-d1.ts --local",
+    "db:seed:remote": "tsx scripts/seed-d1.ts --remote"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.6",

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Loader2, Upload } from "lucide-react";
 import type { AdminGalleryItemRecord } from "@/app/api/admin/gallery/route";
+import type { AvailableEventOption } from "@/components/admin/AdminGalleryManager";
 import type { CloudinarySignedUploadParams } from "@/lib/cloudinary/cloudinary-signature";
 import type { ApiResponse } from "@/types/api-response";
 
@@ -18,12 +19,14 @@ interface CloudinaryUploadResponse {
 }
 
 interface AdminGalleryUploadFormProps {
+  availableEvents?: AvailableEventOption[];
   onUploadSuccess: (item: AdminGalleryItemRecord) => void;
   onError: (error: string | null) => void;
   onSuccess: (message: string | null) => void;
 }
 
 export function AdminGalleryUploadForm({
+  availableEvents,
   onUploadSuccess,
   onError,
   onSuccess,
@@ -32,6 +35,7 @@ export function AdminGalleryUploadForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [captionEn, setCaptionEn] = useState("");
   const [captionTe, setCaptionTe] = useState("");
+  const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState<"published" | "draft">("published");
   const [isUploading, setIsUploading] = useState(false);
 
@@ -107,6 +111,7 @@ export function AdminGalleryUploadForm({
           format: cldJson.format,
           captionEn,
           captionTe,
+          eventId: eventId ? eventId : undefined,
           status,
         }),
       });
@@ -123,6 +128,7 @@ export function AdminGalleryUploadForm({
       setPreviewUrl(null);
       setCaptionEn("");
       setCaptionTe("");
+      setEventId("");
       onSuccess("Gallery image uploaded and saved successfully.");
     } catch (err) {
       onError(err instanceof Error ? err.message : "Upload failed.");
@@ -179,6 +185,26 @@ export function AdminGalleryUploadForm({
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
+          {availableEvents && availableEvents.length > 0 && (
+            <div>
+              <label htmlFor="gallery-event" className="block text-xs font-medium text-foreground">
+                Associated Marriage Event (Optional)
+              </label>
+              <select
+                id="gallery-event"
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <option value="">None (General Gallery / Couple Photo)</option>
+                {availableEvents.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.titleEn} ({ev.titleTe})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 p-3">

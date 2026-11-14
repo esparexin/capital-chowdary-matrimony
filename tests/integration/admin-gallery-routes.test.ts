@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import type { AppDatabase } from "@/db";
-import { adminUsers, galleryItems, mediaAssets } from "@/db/schema";
+import { adminUsers, contentRevisions, galleryItems, mediaAssets } from "@/db/schema";
 import { createTestDatabase } from "../helpers/test-database";
 
 let activeTestDb: AppDatabase;
@@ -127,6 +128,14 @@ describe("admin gallery API routes", () => {
     expect(getJson.ok).toBe(true);
     expect(getJson.data).toHaveLength(1);
     expect(getJson.data[0]?.captionTe).toBe("సాంప్రదాయ వివాహ వేడుక");
+
+    // Verify audit revision logged
+    const revisions = await activeTestDb
+      .select()
+      .from(contentRevisions)
+      .where(eq(contentRevisions.entityType, "gallery_item"));
+    expect(revisions).toHaveLength(1);
+    expect(revisions[0]?.action).toBe("create");
   });
 
   it("PATCH /api/admin/gallery/[id] updates visibility and DELETE removes the record", async () => {
@@ -192,5 +201,13 @@ describe("admin gallery API routes", () => {
     const getRes = await getGalleryHandler();
     const getJson = (await getRes.json()) as { ok: boolean; data: unknown[] };
     expect(getJson.data).toHaveLength(0);
+
+    // Verify audit revisions logged for unpublish and delete
+    const revisions = await activeTestDb
+      .select()
+      .from(contentRevisions)
+      .where(eq(contentRevisions.entityType, "gallery_item"));
+    expect(revisions.some((r) => r.action === "unpublish")).toBe(true);
+    expect(revisions.some((r) => r.action === "delete")).toBe(true);
   });
 });

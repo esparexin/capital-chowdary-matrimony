@@ -16,6 +16,7 @@ export const createGalleryItemSchema = z.object({
   captionEn: z.string().trim().max(500).default(""),
   captionTe: z.string().trim().max(500).default(""),
   status: z.enum(["draft", "published"]).default("published"),
+  eventId: z.string().trim().nullable().optional(),
 });
 
 export const updateGalleryItemSchema = z.object({
@@ -23,6 +24,7 @@ export const updateGalleryItemSchema = z.object({
   captionEn: z.string().trim().max(500).optional(),
   captionTe: z.string().trim().max(500).optional(),
   sortOrder: z.coerce.number().int().optional(),
+  eventId: z.string().trim().nullable().optional(),
 });
 
 export type CreateGalleryItemInput = z.infer<typeof createGalleryItemSchema>;

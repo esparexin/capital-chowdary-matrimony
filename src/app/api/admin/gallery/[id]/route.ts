@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDatabase } from "@/db";
-import { galleryItems, mediaAssets } from "@/db/schema";
+import { contentRevisions, galleryItems, mediaAssets } from "@/db/schema";
 import { requireAuthenticatedAdmin } from "@/lib/auth/session-guard";
 import { deleteCloudinaryAsset } from "@/lib/cloudinary/cloudinary-destroy";
 import { applySecurityHeaders } from "@/lib/security/security-headers";
@@ -18,7 +18,7 @@ export async function PATCH(
   { params }: RouteParams,
 ): Promise<NextResponse<ApiResponse<{ updated: boolean }>>> {
   try {
-    await requireAuthenticatedAdmin();
+    const admin = await requireAuthenticatedAdmin();
     const { id } = await params;
     const rawBody = await request.json();
     const parsed = updateGalleryItemSchema.parse(rawBody);
@@ -38,8 +38,28 @@ export async function PATCH(
     if (parsed.captionEn !== undefined) updates.captionEn = parsed.captionEn;
     if (parsed.captionTe !== undefined) updates.captionTe = parsed.captionTe;
     if (parsed.sortOrder !== undefined) updates.sortOrder = parsed.sortOrder;
+    if (parsed.eventId !== undefined) {
+      updates.eventId = parsed.eventId?.trim() ? parsed.eventId.trim() : null;
+    }
 
     await db.update(galleryItems).set(updates).where(eq(galleryItems.id, id));
+
+    const action =
+      parsed.status && parsed.status !== existing.status
+        ? parsed.status === "published"
+          ? "publish"
+          : "unpublish"
+        : "update";
+
+    await db.insert(contentRevisions).values({
+      id: crypto.randomUUID(),
+      entityType: "gallery_item",
+      entityId: id,
+      action,
+      snapshotJson: JSON.stringify({ ...existing, ...updates }),
+      changedByAdminId: admin.id,
+      createdAt: new Date().toISOString(),
+    });
 
     const response = NextResponse.json<ApiResponse<{ updated: boolean }>>({
       ok: true,
@@ -60,7 +80,7 @@ export async function DELETE(
   { params }: RouteParams,
 ): Promise<NextResponse<ApiResponse<{ deleted: boolean }>>> {
   try {
-    await requireAuthenticatedAdmin();
+    const admin = await requireAuthenticatedAdmin();
     const { id } = await params;
 
     const db = await getDatabase();
@@ -91,6 +111,16 @@ export async function DELETE(
     if (existing.mediaAssetId) {
       await db.delete(mediaAssets).where(eq(mediaAssets.id, existing.mediaAssetId));
     }
+
+    await db.insert(contentRevisions).values({
+      id: crypto.randomUUID(),
+      entityType: "gallery_item",
+      entityId: id,
+      action: "delete",
+      snapshotJson: JSON.stringify(existing),
+      changedByAdminId: admin.id,
+      createdAt: new Date().toISOString(),
+    });
 
     const response = NextResponse.json<ApiResponse<{ deleted: boolean }>>({
       ok: true,
