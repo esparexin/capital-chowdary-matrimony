@@ -22,6 +22,11 @@
       "migrations_dir": "src/db/migrations",
     },
   ],
+  "vars": {
+    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "mmdlzn5o",
+    "CLOUDINARY_UPLOAD_FOLDER": "capital-chowdary-matrimony",
+    "ADMIN_SESSION_COOKIE_NAME": "ccm_admin_session",
+  },
   "observability": {
     "enabled": true,
   },
