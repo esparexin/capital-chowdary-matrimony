@@ -1,0 +1,79 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "feat/**"
+      - "fix/**"
+      - "chore/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Code Quality & Build Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "pnpm"
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify environment example configuration
+        run: node scripts/verify-env-example.mjs
+
+      - name: Generate Cloudflare environment types
+        run: pnpm cf-typegen
+
+      - name: Prettier formatting check
+        run: pnpm format:check
+
+      - name: ESLint check (Next.js Core Web Vitals & TypeScript)
+        run: pnpm lint
+
+      - name: TypeScript strict typecheck
+        run: pnpm typecheck
+
+      - name: Run unit & integration tests
+        run: pnpm test
+
+      - name: Prepare isolated CI build environment
+        run: |
+          cp .env.example .env.local
+          cp .dev.vars.example .dev.vars
+
+      - name: Next.js production build
+        run: pnpm build
+
+      - name: OpenNext Cloudflare Worker bundle build
+        run: pnpm build:worker
+
+      - name: Upload Cloudflare Worker artifact
+        uses: actions/upload-artifact@v4
+        if: always() && (success() || failure())
+        with:
+          name: cloudflare-worker-bundle
+          path: |
+            .open-next/worker.js
+            .open-next/assets/
+          retention-days: 7

@@ -1,0 +1,52 @@
+name: Architecture Governance
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "feat/**"
+      - "fix/**"
+      - "chore/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  architecture-gate:
+    name: Architecture & SSOT Enforcement
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "pnpm"
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Enforce source file length limits (<= 250 lines)
+        run: node scripts/governance/check-file-lengths.mjs
+
+      - name: Enforce architecture boundaries & TypeScript strictness
+        run: node scripts/governance/check-architecture-boundaries.mjs
+
+      - name: Enforce Single Source of Truth (SSOT) & shared contracts
+        run: node scripts/governance/check-ssot-contracts.mjs
+
+      - name: Enforce security hygiene & secret leak prevention
+        run: node scripts/governance/check-security-hygiene.mjs

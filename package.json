@@ -16,6 +16,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:ui-ux": "vitest run tests/unit/ui-ux-governance.test.ts",
+    "check:file-length": "node scripts/governance/check-file-lengths.mjs",
+    "check:architecture": "node scripts/governance/check-architecture-boundaries.mjs",
+    "check:ssot": "node scripts/governance/check-ssot-contracts.mjs",
+    "check:security": "node scripts/governance/check-security-hygiene.mjs",
+    "check:governance": "node scripts/governance/check-all.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply capital-chowdary-matrimony --local",
     "db:migrate:remote": "wrangler d1 migrations apply capital-chowdary-matrimony --remote"

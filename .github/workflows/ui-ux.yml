@@ -1,0 +1,49 @@
+name: Frontend Quality & UI/UX Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - "feat/**"
+      - "fix/**"
+      - "chore/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui-ux-gate:
+    name: UI/UX Standards, Accessibility & Bilingual Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: "pnpm"
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Run UI/UX Governance & Quality Suite
+        run: pnpm run test:ui-ux
+
+      - name: Run Public Route & Lifecycle Component Tests
+        run: npx vitest run tests/unit/public-cms-repos.test.ts tests/unit/homepage-hero.test.ts tests/unit/registration-*.test.ts tests/unit/pricing-*.test.ts
+
+      - name: Run Admin Authentication & Protected Route Tests
+        run: npx vitest run tests/unit/admin-login-page.test.ts tests/unit/protected-admin-layout.test.ts tests/unit/session-*.test.ts
