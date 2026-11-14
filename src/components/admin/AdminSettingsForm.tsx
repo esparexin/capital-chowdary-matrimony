@@ -4,6 +4,9 @@ import { useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
 import type { ApiResponse } from "@/types/api-response";
 import type { SiteSettings } from "@/types/database-types";
+import { SettingsIdentitySection } from "@/components/admin/settings/SettingsIdentitySection";
+import { SettingsContactSection } from "@/components/admin/settings/SettingsContactSection";
+import { SettingsSeoSection } from "@/components/admin/settings/SettingsSeoSection";
 
 interface AdminSettingsFormProps {
   initialSettings: SiteSettings;
@@ -92,276 +95,33 @@ export function AdminSettingsForm({ initialSettings }: AdminSettingsFormProps) {
         </div>
       ) : null}
 
-      {/* 1. Business Identity */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Business Identity (Bilingual)
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Official name and motto shown across public website headers, footers, and legal notices.
-        </p>
+      <SettingsIdentitySection
+        businessNameEn={formData.businessNameEn}
+        businessNameTe={formData.businessNameTe}
+        taglineEn={formData.taglineEn}
+        taglineTe={formData.taglineTe}
+        onChange={handleChange}
+      />
 
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="businessNameEn" className="block text-xs font-medium text-foreground">
-              Business Name (English)
-            </label>
-            <input
-              id="businessNameEn"
-              name="businessNameEn"
-              type="text"
-              required
-              value={formData.businessNameEn}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
+      <SettingsContactSection
+        phoneNumber={formData.phoneNumber}
+        whatsappNumber={formData.whatsappNumber}
+        contactEmail={formData.contactEmail}
+        mapUrl={formData.mapUrl}
+        addressEn={formData.addressEn}
+        addressTe={formData.addressTe}
+        isContactVerified={formData.isContactVerified}
+        onChange={handleChange}
+      />
 
-          <div>
-            <label htmlFor="businessNameTe" className="block text-xs font-medium text-foreground">
-              Business Name (Telugu)
-            </label>
-            <input
-              id="businessNameTe"
-              name="businessNameTe"
-              type="text"
-              required
-              value={formData.businessNameTe}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
+      <SettingsSeoSection
+        defaultSeoTitleEn={formData.defaultSeoTitleEn}
+        defaultSeoTitleTe={formData.defaultSeoTitleTe}
+        defaultSeoDescriptionEn={formData.defaultSeoDescriptionEn}
+        defaultSeoDescriptionTe={formData.defaultSeoDescriptionTe}
+        onChange={handleChange}
+      />
 
-          <div>
-            <label htmlFor="taglineEn" className="block text-xs font-medium text-foreground">
-              Motto / Tagline (English)
-            </label>
-            <input
-              id="taglineEn"
-              name="taglineEn"
-              type="text"
-              required
-              value={formData.taglineEn}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="taglineTe" className="block text-xs font-medium text-foreground">
-              Motto / Tagline (Telugu)
-            </label>
-            <input
-              id="taglineTe"
-              name="taglineTe"
-              type="text"
-              required
-              value={formData.taglineTe}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Contact Channels & Office Details */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Office & Contact Channels
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Verified telephone, WhatsApp inquiry channel, email, and Google Maps location.
-        </p>
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="phoneNumber" className="block text-xs font-medium text-foreground">
-              Official Phone Number
-            </label>
-            <input
-              id="phoneNumber"
-              name="phoneNumber"
-              type="text"
-              required
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="whatsappNumber" className="block text-xs font-medium text-foreground">
-              Official WhatsApp Number
-            </label>
-            <input
-              id="whatsappNumber"
-              name="whatsappNumber"
-              type="text"
-              required
-              value={formData.whatsappNumber}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="contactEmail" className="block text-xs font-medium text-foreground">
-              Contact Email Address
-            </label>
-            <input
-              id="contactEmail"
-              name="contactEmail"
-              type="email"
-              required
-              value={formData.contactEmail}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="mapUrl" className="block text-xs font-medium text-foreground">
-              Google Maps Search / Direction URL
-            </label>
-            <input
-              id="mapUrl"
-              name="mapUrl"
-              type="url"
-              value={formData.mapUrl}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="addressEn" className="block text-xs font-medium text-foreground">
-              Office Address (English)
-            </label>
-            <textarea
-              id="addressEn"
-              name="addressEn"
-              rows={2}
-              value={formData.addressEn}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="addressTe" className="block text-xs font-medium text-foreground">
-              Office Address (Telugu)
-            </label>
-            <textarea
-              id="addressTe"
-              name="addressTe"
-              rows={2}
-              value={formData.addressTe}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-2">
-          <input
-            id="isContactVerified"
-            name="isContactVerified"
-            type="checkbox"
-            checked={formData.isContactVerified}
-            onChange={handleChange}
-            className="size-4 rounded border-input text-primary focus:ring-primary"
-          />
-          <label htmlFor="isContactVerified" className="text-xs font-medium text-foreground">
-            Mark contact details as verified (enables database overrides on public pages)
-          </label>
-        </div>
-      </section>
-
-      {/* 3. SEO Defaults */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-          Default SEO Metadata
-        </h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Default titles and search descriptions used when page-specific SEO overrides are omitted.
-        </p>
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="defaultSeoTitleEn"
-              className="block text-xs font-medium text-foreground"
-            >
-              Default SEO Title (English)
-            </label>
-            <input
-              id="defaultSeoTitleEn"
-              name="defaultSeoTitleEn"
-              type="text"
-              required
-              value={formData.defaultSeoTitleEn}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="defaultSeoTitleTe"
-              className="block text-xs font-medium text-foreground"
-            >
-              Default SEO Title (Telugu)
-            </label>
-            <input
-              id="defaultSeoTitleTe"
-              name="defaultSeoTitleTe"
-              type="text"
-              required
-              value={formData.defaultSeoTitleTe}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="defaultSeoDescriptionEn"
-              className="block text-xs font-medium text-foreground"
-            >
-              Default SEO Description (English)
-            </label>
-            <textarea
-              id="defaultSeoDescriptionEn"
-              name="defaultSeoDescriptionEn"
-              rows={2}
-              required
-              value={formData.defaultSeoDescriptionEn}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="defaultSeoDescriptionTe"
-              className="block text-xs font-medium text-foreground"
-            >
-              Default SEO Description (Telugu)
-            </label>
-            <textarea
-              id="defaultSeoDescriptionTe"
-              name="defaultSeoDescriptionTe"
-              rows={2}
-              required
-              value={formData.defaultSeoDescriptionTe}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Save Button */}
       <div className="flex justify-end">
         <button
           type="submit"

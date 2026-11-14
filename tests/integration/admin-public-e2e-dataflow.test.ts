@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppDatabase } from "@/db";
-import { adminUsers, contentSections, pages, services, siteSettings } from "@/db/schema";
+import { adminUsers, contentSections, pages, siteSettings } from "@/db/schema";
 import {
   getPublicEventsAndGallery,
   getPublicPricingPlans,

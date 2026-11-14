@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { AppDatabase } from "@/db";
 import {
-  adminUsers,
   contentRevisions,
   galleryItems,
   marriageEvents,

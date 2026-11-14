@@ -30,26 +30,74 @@ export interface AdminHomepageHeroData {
   bannerAltEn: string | null;
 }
 
+const HERO_SECTION_SELECT = {
+  id: contentSections.id,
+  titleEn: contentSections.titleEn,
+  titleTe: contentSections.titleTe,
+  bodyEn: contentSections.bodyEn,
+  metadataJson: contentSections.metadataJson,
+  status: contentSections.status,
+  mediaAssetId: contentSections.mediaAssetId,
+  bannerUrl: mediaAssets.secureUrl,
+  bannerPublicId: mediaAssets.cloudinaryPublicId,
+  bannerWidth: mediaAssets.width,
+  bannerHeight: mediaAssets.height,
+  bannerAltEn: mediaAssets.altEn,
+};
+
+function parseHeroRecord(
+  row: typeof HERO_SECTION_SELECT extends infer T ? { [K in keyof T]: unknown } : never,
+): AdminHomepageHeroData {
+  let meta: Record<string, unknown> = {};
+  try {
+    meta = JSON.parse((row.metadataJson as string) || "{}");
+  } catch {
+    meta = {};
+  }
+
+  return {
+    id: row.id as string,
+    titleEn: row.titleEn as string,
+    titleTe: row.titleTe as string,
+    bodyEn: row.bodyEn as string,
+    primaryCtaHref: typeof meta.primaryCtaHref === "string" ? meta.primaryCtaHref : "/register",
+    primaryCtaLabelEn:
+      typeof meta.primaryCtaLabelEn === "string" ? meta.primaryCtaLabelEn : "Register",
+    secondaryCtaHref:
+      typeof meta.secondaryCtaHref === "string" ? meta.secondaryCtaHref : "/contact",
+    secondaryCtaLabelEn:
+      typeof meta.secondaryCtaLabelEn === "string" ? meta.secondaryCtaLabelEn : "Contact Us",
+    associationName:
+      typeof meta.associationName === "string" ? meta.associationName : "Kamma Welfare Association",
+    associationDetail:
+      typeof meta.associationDetail === "string"
+        ? meta.associationDetail
+        : "Andhra & Telangana · Regd. No: AP-07 91-058-0756579",
+    highlights: Array.isArray(meta.highlights)
+      ? (meta.highlights as Array<{ title: string; description: string }>)
+      : [
+          {
+            title: "Andhra Pradesh & Telangana",
+            description: "Alliances across both Telugu states",
+          },
+        ],
+    status: row.status as "draft" | "published",
+    mediaAssetId: (row.mediaAssetId as string) ?? null,
+    bannerUrl: (row.bannerUrl as string) ?? null,
+    bannerPublicId: (row.bannerPublicId as string) ?? null,
+    bannerWidth: (row.bannerWidth as number) ?? null,
+    bannerHeight: (row.bannerHeight as number) ?? null,
+    bannerAltEn: (row.bannerAltEn as string) ?? null,
+  };
+}
+
 export async function GET(): Promise<NextResponse<ApiResponse<AdminHomepageHeroData>>> {
   try {
     await requireAuthenticatedAdmin();
     const db = await getDatabase();
 
     const [row] = await db
-      .select({
-        id: contentSections.id,
-        titleEn: contentSections.titleEn,
-        titleTe: contentSections.titleTe,
-        bodyEn: contentSections.bodyEn,
-        metadataJson: contentSections.metadataJson,
-        status: contentSections.status,
-        mediaAssetId: contentSections.mediaAssetId,
-        bannerUrl: mediaAssets.secureUrl,
-        bannerPublicId: mediaAssets.cloudinaryPublicId,
-        bannerWidth: mediaAssets.width,
-        bannerHeight: mediaAssets.height,
-        bannerAltEn: mediaAssets.altEn,
-      })
+      .select(HERO_SECTION_SELECT)
       .from(contentSections)
       .leftJoin(mediaAssets, eq(contentSections.mediaAssetId, mediaAssets.id))
       .where(and(eq(contentSections.pageId, "page-home"), eq(contentSections.sectionKey, "hero")))
@@ -59,53 +107,9 @@ export async function GET(): Promise<NextResponse<ApiResponse<AdminHomepageHeroD
       throw new AppError("Homepage hero section not found.", 404, "NOT_FOUND");
     }
 
-    let meta: Record<string, unknown> = {};
-    try {
-      meta = JSON.parse(row.metadataJson || "{}");
-    } catch {
-      meta = {};
-    }
-
-    const data: AdminHomepageHeroData = {
-      id: row.id,
-      titleEn: row.titleEn,
-      titleTe: row.titleTe,
-      bodyEn: row.bodyEn,
-      primaryCtaHref: typeof meta.primaryCtaHref === "string" ? meta.primaryCtaHref : "/register",
-      primaryCtaLabelEn:
-        typeof meta.primaryCtaLabelEn === "string" ? meta.primaryCtaLabelEn : "Register",
-      secondaryCtaHref:
-        typeof meta.secondaryCtaHref === "string" ? meta.secondaryCtaHref : "/contact",
-      secondaryCtaLabelEn:
-        typeof meta.secondaryCtaLabelEn === "string" ? meta.secondaryCtaLabelEn : "Contact Us",
-      associationName:
-        typeof meta.associationName === "string"
-          ? meta.associationName
-          : "Kamma Welfare Association",
-      associationDetail:
-        typeof meta.associationDetail === "string"
-          ? meta.associationDetail
-          : "Andhra & Telangana · Regd. No: AP-07 91-058-0756579",
-      highlights: Array.isArray(meta.highlights)
-        ? (meta.highlights as Array<{ title: string; description: string }>)
-        : [
-            {
-              title: "Andhra Pradesh & Telangana",
-              description: "Alliances across both Telugu states",
-            },
-          ],
-      status: row.status as "draft" | "published",
-      mediaAssetId: row.mediaAssetId,
-      bannerUrl: row.bannerUrl,
-      bannerPublicId: row.bannerPublicId,
-      bannerWidth: row.bannerWidth,
-      bannerHeight: row.bannerHeight,
-      bannerAltEn: row.bannerAltEn,
-    };
-
     const response = NextResponse.json<ApiResponse<AdminHomepageHeroData>>({
       ok: true,
-      data,
+      data: parseHeroRecord(row as never),
     });
     applySecurityHeaders(response.headers);
     return response;
@@ -126,7 +130,6 @@ export async function PATCH(
     const parsed = updateHomepageHeroSchema.parse(rawBody);
 
     const db = await getDatabase();
-
     const [existing] = await db
       .select({
         id: contentSections.id,
@@ -209,49 +212,15 @@ export async function PATCH(
     });
 
     const [updatedRow] = await db
-      .select({
-        id: contentSections.id,
-        titleEn: contentSections.titleEn,
-        titleTe: contentSections.titleTe,
-        bodyEn: contentSections.bodyEn,
-        metadataJson: contentSections.metadataJson,
-        status: contentSections.status,
-        mediaAssetId: contentSections.mediaAssetId,
-        bannerUrl: mediaAssets.secureUrl,
-        bannerPublicId: mediaAssets.cloudinaryPublicId,
-        bannerWidth: mediaAssets.width,
-        bannerHeight: mediaAssets.height,
-        bannerAltEn: mediaAssets.altEn,
-      })
+      .select(HERO_SECTION_SELECT)
       .from(contentSections)
       .leftJoin(mediaAssets, eq(contentSections.mediaAssetId, mediaAssets.id))
       .where(eq(contentSections.id, existing.id))
       .limit(1);
 
-    const resultData: AdminHomepageHeroData = {
-      id: updatedRow!.id,
-      titleEn: updatedRow!.titleEn,
-      titleTe: updatedRow!.titleTe,
-      bodyEn: updatedRow!.bodyEn,
-      primaryCtaHref: parsed.primaryCtaHref,
-      primaryCtaLabelEn: parsed.primaryCtaLabelEn,
-      secondaryCtaHref: parsed.secondaryCtaHref,
-      secondaryCtaLabelEn: parsed.secondaryCtaLabelEn,
-      associationName: parsed.associationName,
-      associationDetail: parsed.associationDetail,
-      highlights: parsed.highlights,
-      status: updatedRow!.status as "draft" | "published",
-      mediaAssetId: updatedRow!.mediaAssetId,
-      bannerUrl: updatedRow!.bannerUrl,
-      bannerPublicId: updatedRow!.bannerPublicId,
-      bannerWidth: updatedRow!.bannerWidth,
-      bannerHeight: updatedRow!.bannerHeight,
-      bannerAltEn: updatedRow!.bannerAltEn,
-    };
-
     const response = NextResponse.json<ApiResponse<AdminHomepageHeroData>>({
       ok: true,
-      data: resultData,
+      data: parseHeroRecord(updatedRow as never),
     });
     applySecurityHeaders(response.headers);
     return response;

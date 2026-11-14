@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { and, eq, ne } from "drizzle-orm";
+import type { AppDatabase } from "@/db";
 import { getDatabase } from "@/db";
 import { contentRevisions, marriageEvents, mediaAssets } from "@/db/schema";
 import { requireAuthenticatedAdmin } from "@/lib/auth/session-guard";
@@ -12,6 +13,41 @@ import type { AdminMarriageEventRecord } from "../route";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+const EVENT_FIELDS = {
+  id: marriageEvents.id,
+  slug: marriageEvents.slug,
+  titleEn: marriageEvents.titleEn,
+  titleTe: marriageEvents.titleTe,
+  descriptionEn: marriageEvents.descriptionEn,
+  descriptionTe: marriageEvents.descriptionTe,
+  locationEn: marriageEvents.locationEn,
+  locationTe: marriageEvents.locationTe,
+  eventDate: marriageEvents.eventDate,
+  coverMediaAssetId: marriageEvents.coverMediaAssetId,
+  sortOrder: marriageEvents.sortOrder,
+  status: marriageEvents.status,
+  publishedAt: marriageEvents.publishedAt,
+  createdAt: marriageEvents.createdAt,
+  updatedAt: marriageEvents.updatedAt,
+  coverUrl: mediaAssets.secureUrl,
+  coverPublicId: mediaAssets.cloudinaryPublicId,
+  coverWidth: mediaAssets.width,
+  coverHeight: mediaAssets.height,
+};
+
+async function cleanupOldAsset(db: AppDatabase, publicId: string | null, mediaId: string | null) {
+  if (publicId) {
+    try {
+      await deleteCloudinaryAsset(publicId);
+    } catch (err) {
+      console.warn("Cloudinary asset deletion warning:", err);
+    }
+  }
+  if (mediaId) {
+    await db.delete(mediaAssets).where(eq(mediaAssets.id, mediaId));
+  }
 }
 
 export async function PATCH(
@@ -27,21 +63,7 @@ export async function PATCH(
     const db = await getDatabase();
     const [existing] = await db
       .select({
-        id: marriageEvents.id,
-        slug: marriageEvents.slug,
-        titleEn: marriageEvents.titleEn,
-        titleTe: marriageEvents.titleTe,
-        descriptionEn: marriageEvents.descriptionEn,
-        descriptionTe: marriageEvents.descriptionTe,
-        locationEn: marriageEvents.locationEn,
-        locationTe: marriageEvents.locationTe,
-        eventDate: marriageEvents.eventDate,
-        coverMediaAssetId: marriageEvents.coverMediaAssetId,
-        sortOrder: marriageEvents.sortOrder,
-        status: marriageEvents.status,
-        publishedAt: marriageEvents.publishedAt,
-        createdAt: marriageEvents.createdAt,
-        updatedAt: marriageEvents.updatedAt,
+        ...EVENT_FIELDS,
         oldPublicId: mediaAssets.cloudinaryPublicId,
         oldMediaId: mediaAssets.id,
       })
@@ -67,19 +89,22 @@ export async function PATCH(
     }
 
     const now = new Date().toISOString();
-    const updates: Partial<typeof marriageEvents.$inferInsert> = {
-      updatedAt: now,
-    };
+    const updates: Partial<typeof marriageEvents.$inferInsert> = { updatedAt: now };
 
-    if (parsed.slug !== undefined) updates.slug = parsed.slug;
-    if (parsed.titleEn !== undefined) updates.titleEn = parsed.titleEn;
-    if (parsed.titleTe !== undefined) updates.titleTe = parsed.titleTe;
-    if (parsed.descriptionEn !== undefined) updates.descriptionEn = parsed.descriptionEn;
-    if (parsed.descriptionTe !== undefined) updates.descriptionTe = parsed.descriptionTe;
-    if (parsed.locationEn !== undefined) updates.locationEn = parsed.locationEn;
-    if (parsed.locationTe !== undefined) updates.locationTe = parsed.locationTe;
-    if (parsed.eventDate !== undefined) updates.eventDate = parsed.eventDate;
-    if (parsed.sortOrder !== undefined) updates.sortOrder = parsed.sortOrder;
+    const textFields = [
+      "slug",
+      "titleEn",
+      "titleTe",
+      "descriptionEn",
+      "descriptionTe",
+      "locationEn",
+      "locationTe",
+      "eventDate",
+      "sortOrder",
+    ] as const;
+    textFields.forEach((k) => {
+      if (parsed[k] !== undefined) (updates as Record<string, unknown>)[k] = parsed[k];
+    });
 
     if (parsed.status !== undefined) {
       updates.status = parsed.status;
@@ -90,7 +115,6 @@ export async function PATCH(
       }
     }
 
-    // Handle cover replacement or removal
     if (parsed.secureUrl && parsed.cloudinaryPublicId) {
       const newMediaId = crypto.randomUUID();
       await db.insert(mediaAssets).values({
@@ -108,29 +132,10 @@ export async function PATCH(
       });
 
       updates.coverMediaAssetId = newMediaId;
-
-      if (existing.oldPublicId) {
-        try {
-          await deleteCloudinaryAsset(existing.oldPublicId);
-        } catch (cldErr) {
-          console.warn("Cloudinary asset deletion warning:", cldErr);
-        }
-      }
-      if (existing.oldMediaId) {
-        await db.delete(mediaAssets).where(eq(mediaAssets.id, existing.oldMediaId));
-      }
+      await cleanupOldAsset(db, existing.oldPublicId, existing.oldMediaId);
     } else if (parsed.removeCover && existing.coverMediaAssetId) {
       updates.coverMediaAssetId = null;
-      if (existing.oldPublicId) {
-        try {
-          await deleteCloudinaryAsset(existing.oldPublicId);
-        } catch (cldErr) {
-          console.warn("Cloudinary asset deletion warning:", cldErr);
-        }
-      }
-      if (existing.oldMediaId) {
-        await db.delete(mediaAssets).where(eq(mediaAssets.id, existing.oldMediaId));
-      }
+      await cleanupOldAsset(db, existing.oldPublicId, existing.oldMediaId);
     }
 
     await db.update(marriageEvents).set(updates).where(eq(marriageEvents.id, id));
@@ -153,27 +158,7 @@ export async function PATCH(
     });
 
     const [updatedRow] = await db
-      .select({
-        id: marriageEvents.id,
-        slug: marriageEvents.slug,
-        titleEn: marriageEvents.titleEn,
-        titleTe: marriageEvents.titleTe,
-        descriptionEn: marriageEvents.descriptionEn,
-        descriptionTe: marriageEvents.descriptionTe,
-        locationEn: marriageEvents.locationEn,
-        locationTe: marriageEvents.locationTe,
-        eventDate: marriageEvents.eventDate,
-        coverMediaAssetId: marriageEvents.coverMediaAssetId,
-        sortOrder: marriageEvents.sortOrder,
-        status: marriageEvents.status,
-        publishedAt: marriageEvents.publishedAt,
-        createdAt: marriageEvents.createdAt,
-        updatedAt: marriageEvents.updatedAt,
-        coverUrl: mediaAssets.secureUrl,
-        coverPublicId: mediaAssets.cloudinaryPublicId,
-        coverWidth: mediaAssets.width,
-        coverHeight: mediaAssets.height,
-      })
+      .select(EVENT_FIELDS)
       .from(marriageEvents)
       .leftJoin(mediaAssets, eq(marriageEvents.coverMediaAssetId, mediaAssets.id))
       .where(eq(marriageEvents.id, id))

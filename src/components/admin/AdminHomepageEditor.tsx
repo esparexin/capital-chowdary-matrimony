@@ -1,20 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Image as ImageIcon,
-  Loader2,
-  Plus,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react";
 import type { AdminHomepageHeroData } from "@/app/api/admin/homepage/route";
 import type { CloudinarySignedUploadParams } from "@/lib/cloudinary/cloudinary-signature";
 import type { ApiResponse } from "@/types/api-response";
+import { HomepageHeroContentSection } from "@/components/admin/homepage/HomepageHeroContentSection";
+import { HomepageHeroHighlightsSection } from "@/components/admin/homepage/HomepageHeroHighlightsSection";
+import { HomepageHeroBannerSection } from "@/components/admin/homepage/HomepageHeroBannerSection";
 
 interface CloudinaryUploadResponse {
   public_id: string;
@@ -101,17 +94,21 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
     setSuccessMessage(null);
 
     try {
-      let cloudinaryData: Partial<CloudinaryUploadResponse> = {};
+      let uploadedPublicId: string | undefined;
+      let uploadedSecureUrl: string | undefined;
+      let uploadedWidth: number | undefined;
+      let uploadedHeight: number | undefined;
+      let uploadedBytes: number | undefined;
+      let uploadedFormat: string | undefined;
 
       if (bannerFile) {
         const sigRes = await fetch("/api/admin/media/signature?category=banners", {
           method: "POST",
         });
         const sigJson = (await sigRes.json()) as ApiResponse<CloudinarySignedUploadParams>;
-
         if (!sigRes.ok || !sigJson.ok) {
           throw new Error(
-            !sigJson.ok ? sigJson.error.message : "Failed to obtain upload authorization.",
+            !sigJson.ok ? sigJson.error.message : "Failed to obtain upload signature.",
           );
         }
 
@@ -123,32 +120,35 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
         uploadBody.append("signature", signature);
         uploadBody.append("folder", folder);
 
-        const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
           method: "POST",
           body: uploadBody,
         });
         const cldJson = (await cldRes.json()) as CloudinaryUploadResponse;
-
-        if (!cldRes.ok) {
-          throw new Error(cldJson.error?.message || "Cloudinary banner upload failed.");
+        if (!cldRes.ok || cldJson.error) {
+          throw new Error(cldJson.error?.message || "Cloudinary image upload failed.");
         }
 
-        cloudinaryData = cldJson;
+        uploadedPublicId = cldJson.public_id;
+        uploadedSecureUrl = cldJson.secure_url;
+        uploadedWidth = cldJson.width;
+        uploadedHeight = cldJson.height;
+        uploadedBytes = cldJson.bytes;
+        uploadedFormat = cldJson.format;
       }
 
       const payload = {
         ...formData,
-        highlights: highlights.filter((h) => h.title.trim() && h.description.trim()),
-        ...(cloudinaryData.public_id
-          ? {
-              cloudinaryPublicId: cloudinaryData.public_id,
-              secureUrl: cloudinaryData.secure_url,
-              width: cloudinaryData.width,
-              height: cloudinaryData.height,
-              bytes: cloudinaryData.bytes,
-              format: cloudinaryData.format,
-            }
-          : {}),
+        highlights,
+        ...(uploadedSecureUrl && {
+          secureUrl: uploadedSecureUrl,
+          cloudinaryPublicId: uploadedPublicId,
+          width: uploadedWidth,
+          height: uploadedHeight,
+          bytes: uploadedBytes,
+          format: uploadedFormat,
+          altEn: formData.titleEn,
+        }),
       };
 
       const res = await fetch("/api/admin/homepage", {
@@ -159,16 +159,16 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
 
       const json = (await res.json()) as ApiResponse<AdminHomepageHeroData>;
       if (!res.ok || !json.ok) {
-        throw new Error(!json.ok ? json.error.message : "Failed to save homepage hero.");
+        throw new Error(!json.ok ? json.error.message : "Failed to update homepage hero.");
       }
 
       setBannerFile(null);
       if (json.data.bannerUrl) {
         setBannerPreviewUrl(json.data.bannerUrl);
       }
-      setSuccessMessage("Homepage hero content saved successfully.");
+      setSuccessMessage("Homepage hero section updated successfully.");
     } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : "Failed to save homepage content.");
+      setErrorMessage(err instanceof Error ? err.message : "Failed to save homepage hero.");
     } finally {
       setIsSaving(false);
     }
@@ -176,7 +176,7 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {errorMessage ? (
+      {errorMessage && (
         <div
           role="alert"
           className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive"
@@ -184,9 +184,9 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
           <AlertCircle className="size-4 shrink-0" />
           <p className="flex-1 font-medium">{errorMessage}</p>
         </div>
-      ) : null}
+      )}
 
-      {successMessage ? (
+      {successMessage && (
         <div
           role="status"
           className="flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-800 dark:text-emerald-300"
@@ -194,318 +194,28 @@ export function AdminHomepageEditor({ initialData }: AdminHomepageEditorProps) {
           <CheckCircle2 className="size-4 shrink-0" />
           <p className="flex-1 font-medium">{successMessage}</p>
         </div>
-      ) : null}
+      )}
 
-      {/* 1. Hero Copy (Bilingual) */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            Hero Heading &amp; Introduction
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Topmost heading, verified Telugu introduction banner, and primary description on the
-            public homepage.
-          </p>
-        </div>
+      <HomepageHeroContentSection formData={formData} setFormData={setFormData} />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label htmlFor="hero-title-en" className="block text-xs font-medium text-foreground">
-              Main Heading (English)
-            </label>
-            <input
-              id="hero-title-en"
-              type="text"
-              required
-              value={formData.titleEn}
-              onChange={(e) => setFormData((p) => ({ ...p, titleEn: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
+      <HomepageHeroHighlightsSection
+        highlights={highlights}
+        onHighlightChange={handleHighlightChange}
+        onAddHighlight={addHighlight}
+        onRemoveHighlight={removeHighlight}
+      />
 
-          <div className="sm:col-span-2">
-            <label htmlFor="hero-title-te" className="block text-xs font-medium text-foreground">
-              Telugu Introduction Banner
-            </label>
-            <textarea
-              id="hero-title-te"
-              rows={2}
-              required
-              value={formData.titleTe}
-              onChange={(e) => setFormData((p) => ({ ...p, titleTe: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
+      <HomepageHeroBannerSection
+        status={formData.status}
+        onStatusChange={(status) => setFormData((p) => ({ ...p, status }))}
+        bannerPreviewUrl={bannerPreviewUrl}
+        onClearBanner={() => {
+          setBannerFile(null);
+          setBannerPreviewUrl(null);
+        }}
+        onFileChange={handleFileChange}
+      />
 
-          <div className="sm:col-span-2">
-            <label htmlFor="hero-body-en" className="block text-xs font-medium text-foreground">
-              Description (English)
-            </label>
-            <textarea
-              id="hero-body-en"
-              rows={3}
-              required
-              value={formData.bodyEn}
-              onChange={(e) => setFormData((p) => ({ ...p, bodyEn: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 2. Association & Calls to Action */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            Association Details &amp; Calls to Action
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Welfare association affiliation details and hero button configurations.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="assoc-name" className="block text-xs font-medium text-foreground">
-              Association Name
-            </label>
-            <input
-              id="assoc-name"
-              type="text"
-              required
-              value={formData.associationName}
-              onChange={(e) => setFormData((p) => ({ ...p, associationName: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="assoc-detail" className="block text-xs font-medium text-foreground">
-              Association Registration Details
-            </label>
-            <input
-              id="assoc-detail"
-              type="text"
-              required
-              value={formData.associationDetail}
-              onChange={(e) => setFormData((p) => ({ ...p, associationDetail: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="primary-cta-label"
-              className="block text-xs font-medium text-foreground"
-            >
-              Primary Button Label
-            </label>
-            <input
-              id="primary-cta-label"
-              type="text"
-              required
-              value={formData.primaryCtaLabelEn}
-              onChange={(e) => setFormData((p) => ({ ...p, primaryCtaLabelEn: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="primary-cta-href" className="block text-xs font-medium text-foreground">
-              Primary Button URL
-            </label>
-            <input
-              id="primary-cta-href"
-              type="text"
-              required
-              value={formData.primaryCtaHref}
-              onChange={(e) => setFormData((p) => ({ ...p, primaryCtaHref: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="secondary-cta-label"
-              className="block text-xs font-medium text-foreground"
-            >
-              Secondary Button Label
-            </label>
-            <input
-              id="secondary-cta-label"
-              type="text"
-              required
-              value={formData.secondaryCtaLabelEn}
-              onChange={(e) => setFormData((p) => ({ ...p, secondaryCtaLabelEn: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="secondary-cta-href"
-              className="block text-xs font-medium text-foreground"
-            >
-              Secondary Button URL
-            </label>
-            <input
-              id="secondary-cta-href"
-              type="text"
-              required
-              value={formData.secondaryCtaHref}
-              onChange={(e) => setFormData((p) => ({ ...p, secondaryCtaHref: e.target.value }))}
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Hero Highlights */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-              Hero Highlights
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Key alliance points shown under the hero heading (e.g. geographic coverage).
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={addHighlight}
-            className="inline-flex items-center gap-1 rounded border border-input px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted"
-          >
-            <Plus className="size-3.5" />
-            Add Highlight
-          </button>
-        </div>
-
-        <div className="space-y-3">
-          {highlights.map((hl, idx) => (
-            <div
-              key={idx}
-              className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 p-3"
-            >
-              <div className="flex-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[11px] font-medium text-muted-foreground">
-                    Highlight Title
-                  </label>
-                  <input
-                    type="text"
-                    value={hl.title}
-                    onChange={(e) => handleHighlightChange(idx, "title", e.target.value)}
-                    placeholder="e.g. Andhra Pradesh & Telangana"
-                    className="mt-0.5 block w-full rounded border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-muted-foreground">
-                    Highlight Description
-                  </label>
-                  <input
-                    type="text"
-                    value={hl.description}
-                    onChange={(e) => handleHighlightChange(idx, "description", e.target.value)}
-                    placeholder="e.g. Alliances across both Telugu states"
-                    className="mt-0.5 block w-full rounded border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-                  />
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeHighlight(idx)}
-                className="mt-4 rounded p-1 text-destructive hover:bg-destructive/10"
-                title="Remove highlight"
-              >
-                <Trash2 className="size-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 4. Banner Image & Publication Status */}
-      <section className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
-            Banner Media &amp; Status
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Hero banner photo stored on Cloudinary and public publication toggle.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="hero-status" className="block text-xs font-medium text-foreground">
-              Hero Section Visibility
-            </label>
-            <select
-              id="hero-status"
-              value={formData.status}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, status: e.target.value as "draft" | "published" }))
-              }
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
-            >
-              <option value="published">Published (Live on Website)</option>
-              <option value="draft">Draft (Fallback to Baseline Defaults)</option>
-            </select>
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-foreground">
-              Hero Banner Image (Cloudinary)
-            </label>
-
-            <div className="mt-2 flex flex-wrap items-center gap-4">
-              {bannerPreviewUrl ? (
-                <div className="relative aspect-16/10 w-44 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                  <Image
-                    src={bannerPreviewUrl}
-                    alt="Hero banner preview"
-                    fill
-                    className="object-cover"
-                    sizes="176px"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBannerFile(null);
-                      setBannerPreviewUrl(null);
-                    }}
-                    className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white hover:bg-black"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex aspect-16/10 w-44 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-muted-foreground">
-                  <ImageIcon className="size-8 stroke-1" />
-                </div>
-              )}
-
-              <div className="flex-1">
-                <input
-                  id="hero-banner-upload"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileChange}
-                  className="block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-secondary-foreground hover:file:bg-secondary/80"
-                />
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Uploads directly to Cloudinary folder <span className="font-mono">banners</span>.
-                  Recommended size: 1200x896px. Max 5MB.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Save Button */}
       <div className="flex justify-end">
         <button
           type="submit"
