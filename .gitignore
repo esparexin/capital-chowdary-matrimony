@@ -6,10 +6,13 @@
 
 # Testing
 /coverage
+*.lcov
+.vitest/
 
 # Next.js
 /.next/
 /out/
+.turbo/
 
 # OpenNext & Cloudflare
 /.open-next/
@@ -21,6 +24,7 @@ cloudflare-env.d.ts
 
 # Production
 /build
+/dist
 
 # Misc
 .DS_Store

@@ -1,0 +1,32 @@
+{
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.next/**": true,
+    "**/.open-next/**": true,
+    "**/.wrangler/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/coverage/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/.open-next": true,
+    "**/.wrangler": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/*.tsbuildinfo": true,
+    "cloudflare-env.d.ts": true,
+    "ccm-logo.png": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.next": true,
+    "**/.open-next": true,
+    "**/.wrangler": true,
+    "**/*.tsbuildinfo": true
+  }
+}
