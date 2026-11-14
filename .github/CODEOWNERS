@@ -1,0 +1,16 @@
+# Capital Chowdary Matrimony — Global Codeowners
+# Every pull request must be reviewed and approved by the engineering maintainer.
+
+# Default owner for everything in the repository
+* @esparexin
+
+# Critical Architecture, CI & Security Governance
+/.github/ @esparexin
+/scripts/governance/ @esparexin
+/src/lib/security/ @esparexin
+/src/lib/auth/ @esparexin
+
+# Database Schemas & Migrations
+/src/db/ @esparexin
+/drizzle.config.ts @esparexin
+/wrangler.jsonc @esparexin
