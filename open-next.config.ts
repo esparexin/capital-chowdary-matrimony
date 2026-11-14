@@ -1,3 +1,7 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 
-export default defineCloudflareConfig({});
+const config = defineCloudflareConfig({});
+// Prevent recursion when package.json "build" script is "opennextjs-cloudflare build"
+config.buildCommand = "next build";
+
+export default config;
