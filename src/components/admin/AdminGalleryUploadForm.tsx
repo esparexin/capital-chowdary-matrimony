@@ -1,22 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 import type { AdminGalleryItemRecord } from "@/app/api/admin/gallery/route";
 import type { AvailableEventOption } from "@/components/admin/AdminGalleryManager";
-import type { CloudinarySignedUploadParams } from "@/lib/cloudinary/cloudinary-signature";
-import type { ApiResponse } from "@/types/api-response";
-
-interface CloudinaryUploadResponse {
-  public_id: string;
-  secure_url: string;
-  width: number;
-  height: number;
-  bytes?: number;
-  format?: string;
-  error?: { message?: string };
-}
+import {
+  MAX_IMAGE_UPLOAD_COUNT,
+  isDuplicateFile,
+  validateBatchImageFiles,
+} from "@/lib/validations/image-upload-schema";
+import { GalleryUploadBatchControls } from "./gallery/GalleryUploadBatchControls";
+import { GalleryUploadQueue } from "./gallery/GalleryUploadQueue";
+import {
+  executeGalleryBatchUpload,
+  type GalleryUploadQueueItem,
+  type UploadItemStatus,
+} from "./gallery/gallery-upload-service";
 
 interface AdminGalleryUploadFormProps {
   availableEvents?: AvailableEventOption[];
@@ -31,36 +30,83 @@ export function AdminGalleryUploadForm({
   onError,
   onSuccess,
 }: AdminGalleryUploadFormProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [captionEn, setCaptionEn] = useState("");
-  const [captionTe, setCaptionTe] = useState("");
+  const [queue, setQueue] = useState<GalleryUploadQueueItem[]>([]);
+  const [defaultCaptionEn, setDefaultCaptionEn] = useState("");
+  const [defaultCaptionTe, setDefaultCaptionTe] = useState("");
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState<"published" | "draft">("published");
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  useEffect(() => {
+    return () => {
+      queue.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    };
+  }, [queue]);
 
-    if (!["image/jpeg", "image/png", "image/webp"].includes(selected.type)) {
-      onError("Please select a JPEG, PNG, or WebP image.");
-      return;
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFiles = e.target.files ? Array.from(e.target.files) : [];
+    if (rawFiles.length === 0) return;
+
+    const existingRawFiles = queue.map((q) => q.file);
+    const nonDuplicates = rawFiles.filter((f) => !isDuplicateFile(f, existingRawFiles));
+    const duplicateCount = rawFiles.length - nonDuplicates.length;
+
+    const validation = validateBatchImageFiles(nonDuplicates, queue.length, MAX_IMAGE_UPLOAD_COUNT);
+
+    if (validation.rejected.length > 0 || duplicateCount > 0) {
+      const messages: string[] = [];
+      if (duplicateCount > 0) messages.push(`${duplicateCount} duplicate file(s) skipped.`);
+      if (validation.errorSummary) messages.push(validation.errorSummary);
+      onError(messages.join(" "));
+    } else {
+      onError(null);
     }
-    if (selected.size > 5 * 1024 * 1024) {
-      onError("Image file must be under 5MB.");
-      return;
+
+    if (validation.accepted.length > 0) {
+      const newItems: GalleryUploadQueueItem[] = validation.accepted.map((file) => ({
+        id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        captionEn: defaultCaptionEn,
+        captionTe: defaultCaptionTe,
+        status: "idle",
+      }));
+      setQueue((prev) => [...prev, ...newItems]);
     }
 
-    onError(null);
-    setFile(selected);
-    setPreviewUrl(URL.createObjectURL(selected));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const handleRemoveItem = (id: string) => {
+    setQueue((prev) => {
+      const target = prev.find((it) => it.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((it) => it.id !== id);
+    });
+  };
+
+  const handleClearAll = () => {
+    queue.forEach((it) => URL.revokeObjectURL(it.previewUrl));
+    setQueue([]);
+    onError(null);
+  };
+
+  const handleUpdateItemCaption = (id: string, captionEn: string, captionTe: string) => {
+    setQueue((prev) => prev.map((it) => (it.id === id ? { ...it, captionEn, captionTe } : it)));
+  };
+
+  const handleStatusChange = (id: string, newStatus: UploadItemStatus, err?: string) => {
+    setQueue((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, status: newStatus, errorMessage: err } : it)),
+    );
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      onError("Please select an image file to upload.");
+    const pendingItems = queue.filter((it) => it.status !== "success");
+    if (pendingItems.length === 0) {
+      onError("Please select at least one image file to upload.");
       return;
     }
 
@@ -69,180 +115,101 @@ export function AdminGalleryUploadForm({
     onSuccess(null);
 
     try {
-      const sigRes = await fetch("/api/admin/media/signature?category=gallery", {
-        method: "POST",
+      const summary = await executeGalleryBatchUpload(queue, {
+        eventId: eventId ? eventId : undefined,
+        status,
+        onItemStatusChange: handleStatusChange,
+        onItemSuccess: onUploadSuccess,
       });
-      const sigJson = (await sigRes.json()) as ApiResponse<CloudinarySignedUploadParams>;
 
-      if (!sigRes.ok || !sigJson.ok) {
-        throw new Error(
-          !sigJson.ok ? sigJson.error.message : "Failed to obtain upload authorization.",
+      if (summary.failed === 0) {
+        onSuccess(`Successfully uploaded ${summary.succeeded} image(s) to the gallery.`);
+      } else if (summary.succeeded > 0) {
+        onError(
+          `Uploaded ${summary.succeeded} image(s) successfully, but ${summary.failed} image(s) failed.`,
         );
+      } else {
+        onError(`All ${summary.failed} upload(s) failed.`);
       }
-
-      const { cloudName, apiKey, folder, timestamp, signature } = sigJson.data;
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("api_key", apiKey);
-      formData.append("timestamp", String(timestamp));
-      formData.append("signature", signature);
-      formData.append("folder", folder);
-
-      const cldRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      const cldJson = (await cldRes.json()) as CloudinaryUploadResponse;
-
-      if (!cldRes.ok) {
-        throw new Error(cldJson.error?.message || "Cloudinary upload failed.");
-      }
-
-      const saveRes = await fetch("/api/admin/gallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cloudinaryPublicId: cldJson.public_id,
-          secureUrl: cldJson.secure_url,
-          width: cldJson.width,
-          height: cldJson.height,
-          bytes: cldJson.bytes,
-          format: cldJson.format,
-          captionEn,
-          captionTe,
-          eventId: eventId ? eventId : undefined,
-          status,
-        }),
-      });
-      const saveJson = (await saveRes.json()) as ApiResponse<AdminGalleryItemRecord>;
-
-      if (!saveRes.ok || !saveJson.ok) {
-        throw new Error(
-          !saveJson.ok ? saveJson.error.message : "Failed to save image record in database.",
-        );
-      }
-
-      onUploadSuccess(saveJson.data);
-      setFile(null);
-      setPreviewUrl(null);
-      setCaptionEn("");
-      setCaptionTe("");
-      setEventId("");
-      onSuccess("Gallery image uploaded and saved successfully.");
-    } catch (err) {
-      onError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  return (
-    <form onSubmit={handleUpload} className="rounded-xl border border-border bg-card p-5 shadow-xs">
-      <h2 className="text-base font-semibold text-foreground">Upload Gallery Image</h2>
-      <p className="mt-0.5 text-xs text-muted-foreground">
-        JPEG, PNG, or WebP up to 5MB. Uploads securely to Cloudinary.
-      </p>
+  const pendingCount = queue.filter((it) => it.status !== "success").length;
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-3">
+  return (
+    <form
+      onSubmit={handleUploadSubmit}
+      className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-4"
+    >
+      <div>
+        <h2 className="text-base font-semibold text-foreground">Upload Gallery Images</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Select up to {MAX_IMAGE_UPLOAD_COUNT} images in a single upload operation. JPEG, PNG, or
+          WebP up to 5MB each.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="sm:col-span-2 lg:col-span-1 space-y-3">
           <div>
             <label htmlFor="gallery-file" className="block text-xs font-medium text-foreground">
-              Select File
+              Select Photos (Up to {MAX_IMAGE_UPLOAD_COUNT})
             </label>
             <input
+              ref={fileInputRef}
               id="gallery-file"
               type="file"
+              multiple
               accept="image/jpeg,image/png,image/webp"
-              onChange={handleFileChange}
-              disabled={isUploading}
-              className="mt-1 block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground hover:file:opacity-90"
+              onChange={handleFilesSelected}
+              disabled={isUploading || queue.length >= MAX_IMAGE_UPLOAD_COUNT}
+              className="mt-1 block w-full text-xs text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground hover:file:opacity-90 disabled:opacity-50"
             />
           </div>
-          <div>
-            <label htmlFor="caption-en" className="block text-xs font-medium text-foreground">
-              Caption (English)
-            </label>
-            <input
-              id="caption-en"
-              type="text"
-              value={captionEn}
-              onChange={(e) => setCaptionEn(e.target.value)}
-              placeholder="e.g. Marriage Event or Muhurtham Chart"
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            />
-          </div>
-          <div>
-            <label htmlFor="caption-te" className="block text-xs font-medium text-foreground">
-              Caption (Telugu)
-            </label>
-            <input
-              id="caption-te"
-              type="text"
-              value={captionTe}
-              onChange={(e) => setCaptionTe(e.target.value)}
-              placeholder="ఉదా: వివాహ వేడుక లేదా ముహూర్తం వివరాలు"
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            />
-          </div>
-          {availableEvents && availableEvents.length > 0 && (
-            <div>
-              <label htmlFor="gallery-event" className="block text-xs font-medium text-foreground">
-                Associated Marriage Event (Optional)
-              </label>
-              <select
-                id="gallery-event"
-                value={eventId}
-                onChange={(e) => setEventId(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <option value="">None (General Gallery / Couple Photo)</option>
-                {availableEvents.map((ev) => (
-                  <option key={ev.id} value={ev.id}>
-                    {ev.titleEn} ({ev.titleTe})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+
+          <GalleryUploadBatchControls
+            defaultCaptionEn={defaultCaptionEn}
+            defaultCaptionTe={defaultCaptionTe}
+            eventId={eventId}
+            status={status}
+            availableEvents={availableEvents}
+            onCaptionEnChange={setDefaultCaptionEn}
+            onCaptionTeChange={setDefaultCaptionTe}
+            onEventIdChange={setEventId}
+            onStatusChange={setStatus}
+          />
         </div>
 
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 p-3">
-          {previewUrl ? (
-            <div className="relative aspect-4/3 w-full max-w-[200px] overflow-hidden rounded-md bg-black/5">
-              <Image src={previewUrl} alt="Upload preview" fill className="object-cover" />
-            </div>
-          ) : (
-            <div className="text-center text-xs text-muted-foreground">
-              <Upload className="mx-auto size-6 text-muted-foreground/60" />
-              <p className="mt-1">No image selected</p>
-            </div>
-          )}
-          <div className="mt-3 flex items-center gap-3">
-            <label htmlFor="gallery-status" className="text-xs font-medium text-foreground">
-              Visibility:
-            </label>
-            <select
-              id="gallery-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as "published" | "draft")}
-              className="rounded-md border border-input bg-background px-2 py-1 text-xs shadow-xs"
-            >
-              <option value="published">Published</option>
-              <option value="draft">Draft</option>
-            </select>
-          </div>
+        <div className="flex flex-col justify-end">
+          <button
+            type="submit"
+            disabled={isUploading || pendingCount === 0}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Uploading {pendingCount} image(s)...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="size-4" />
+                <span>Upload {pendingCount > 0 ? `${pendingCount} Images` : "to Gallery"}</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={isUploading || !file}
-        className="mt-4 inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-xs transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isUploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-        <span>{isUploading ? "Uploading to Cloudinary..." : "Upload to Gallery"}</span>
-      </button>
+      <GalleryUploadQueue
+        items={queue}
+        isUploading={isUploading}
+        onRemoveItem={handleRemoveItem}
+        onUpdateCaption={handleUpdateItemCaption}
+        onClearAll={handleClearAll}
+      />
     </form>
   );
 }

@@ -4,6 +4,7 @@ import { Loader2, Upload, X } from "lucide-react";
 import { EventCoverUploadField } from "./EventCoverUploadField";
 import { EventDescriptionFields } from "./EventDescriptionFields";
 import { EventLocationFields } from "./EventLocationFields";
+import { EventTitleFields } from "./EventTitleFields";
 
 export interface EventFormData {
   slug: string;
@@ -61,28 +62,34 @@ interface AdminEventFormProps {
   editingId: string | null;
   formData: EventFormData;
   setFormData: React.Dispatch<React.SetStateAction<EventFormData>>;
-  coverFile: File | null;
+  selectedFiles: File[];
+  coverIndex: number;
   coverPreviewUrl: string | null;
   removeExistingCover: boolean;
   onClearCover: () => void;
+  onSetCoverIndex: (index: number) => void;
+  onRemoveSelectedFile: (index: number) => void;
+  onFilesSelected: (files: File[]) => void;
   isSubmitting: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function AdminEventForm({
   editingId,
   formData,
   setFormData,
-  coverFile,
+  selectedFiles,
+  coverIndex,
   coverPreviewUrl,
   removeExistingCover,
   onClearCover,
+  onSetCoverIndex,
+  onRemoveSelectedFile,
+  onFilesSelected,
   isSubmitting,
   onClose,
   onSubmit,
-  onFileChange,
 }: AdminEventFormProps) {
   const inputClass =
     "mt-1 block w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary";
@@ -122,37 +129,7 @@ export function AdminEventForm({
         </div>
 
         <EventLocationFields formData={formData} setFormData={setFormData} />
-
-        <div>
-          <label htmlFor="ev-title-en" className="block text-xs font-medium text-foreground">
-            Event Title (English)
-          </label>
-          <input
-            id="ev-title-en"
-            type="text"
-            required
-            value={formData.titleEn}
-            onChange={(e) => setFormData((p) => ({ ...p, titleEn: e.target.value }))}
-            placeholder="e.g. Narasaraopet Parichaya Vedika"
-            className={inputClass}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="ev-title-te" className="block text-xs font-medium text-foreground">
-            Event Title (Telugu)
-          </label>
-          <input
-            id="ev-title-te"
-            type="text"
-            required
-            value={formData.titleTe}
-            onChange={(e) => setFormData((p) => ({ ...p, titleTe: e.target.value }))}
-            placeholder="e.g. నరసరావుపేట పరిచయ వేదిక"
-            className={inputClass}
-          />
-        </div>
-
+        <EventTitleFields formData={formData} setFormData={setFormData} />
         <EventDescriptionFields formData={formData} setFormData={setFormData} />
 
         <div>
@@ -192,7 +169,12 @@ export function AdminEventForm({
           coverPreviewUrl={coverPreviewUrl}
           removeExistingCover={removeExistingCover}
           onClearCover={onClearCover}
-          onFileChange={onFileChange}
+          selectedFiles={selectedFiles}
+          coverIndex={coverIndex}
+          onSetCoverIndex={onSetCoverIndex}
+          onRemoveFile={onRemoveSelectedFile}
+          onFilesSelected={onFilesSelected}
+          disabled={isSubmitting}
         />
       </div>
 
@@ -212,12 +194,12 @@ export function AdminEventForm({
           {isSubmitting ? (
             <>
               <Loader2 className="size-3.5 animate-spin" />
-              {coverFile ? "Uploading to Cloudinary..." : "Saving..."}
+              <span>Saving...</span>
             </>
           ) : (
             <>
               <Upload className="size-3.5" />
-              {editingId ? "Save Changes" : "Create Event"}
+              <span>{editingId ? "Save Changes" : "Create Event"}</span>
             </>
           )}
         </button>

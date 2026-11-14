@@ -11,7 +11,7 @@ import {
   type EventFormData,
 } from "@/components/admin/events/AdminEventForm";
 import { AdminEventsList } from "@/components/admin/events/AdminEventsList";
-import { uploadEventCover, validateImageFile } from "@/components/admin/events/event-upload-helper";
+import { saveMarriageEventWithMedia } from "@/components/admin/events/event-upload-helper";
 
 interface AdminEventsManagerProps {
   initialEvents: AdminMarriageEventRecord[];
@@ -27,14 +27,16 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormData>(DEFAULT_EVENT_FORM);
 
-  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [coverIndex, setCoverIndex] = useState(0);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [removeExistingCover, setRemoveExistingCover] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
     setFormData({ ...DEFAULT_EVENT_FORM, sortOrder: (eventsList.length + 1) * 10 });
-    setCoverFile(null);
+    setSelectedFiles([]);
+    setCoverIndex(0);
     setCoverPreviewUrl(null);
     setRemoveExistingCover(false);
     setEditingId(null);
@@ -50,24 +52,21 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
   const openEditForm = (ev: AdminMarriageEventRecord) => {
     setEditingId(ev.id);
     setFormData(toEventFormData(ev));
-    setCoverFile(null);
+    setSelectedFiles([]);
+    setCoverIndex(0);
     setCoverPreviewUrl(ev.coverUrl);
     setRemoveExistingCover(false);
     setIsFormOpen(true);
   };
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
-    const err = validateImageFile(selected);
-    if (err) {
-      setErrorMessage(err);
-      return;
-    }
-    setErrorMessage(null);
-    setCoverFile(selected);
+  const handleFilesSelected = (newFiles: File[]) => {
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
     setRemoveExistingCover(false);
-    setCoverPreviewUrl(URL.createObjectURL(selected));
+  };
+
+  const handleRemoveSelectedFile = (idx: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+    setCoverIndex((prev) => (prev === idx ? 0 : prev > idx ? prev - 1 : prev));
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -78,33 +77,25 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
 
     try {
       const isEditing = Boolean(editingId);
-      const uploadedMedia = coverFile ? await uploadEventCover(coverFile) : {};
-      const payload = {
-        ...formData,
-        ...(coverFile && uploadedMedia),
-        ...(isEditing && removeExistingCover && !coverFile && { removeCover: true }),
-      };
-
-      const url = isEditing ? `/api/admin/events/${editingId}` : "/api/admin/events";
-      const res = await fetch(url, {
-        method: isEditing ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const { event: savedEvent, additionalSummary } = await saveMarriageEventWithMedia({
+        editingId,
+        formData,
+        selectedFiles,
+        coverIndex,
+        removeExistingCover,
       });
 
-      const json = (await res.json()) as ApiResponse<AdminMarriageEventRecord>;
-      if (!res.ok || !json.ok) {
-        throw new Error(!json.ok ? json.error.message : "Operation failed.");
-      }
-
       if (isEditing) {
-        setEventsList((prev) => prev.map((it) => (it.id === editingId ? json.data : it)));
-        setSuccessMessage("Event updated successfully.");
+        setEventsList((prev) => prev.map((it) => (it.id === editingId ? savedEvent : it)));
       } else {
-        setEventsList((prev) => [...prev, json.data]);
-        setSuccessMessage("Event created successfully.");
+        setEventsList((prev) => [...prev, savedEvent]);
       }
 
+      let successText = isEditing ? "Event updated successfully." : "Event created successfully.";
+      if (additionalSummary && additionalSummary.succeeded > 0) {
+        successText += ` ${additionalSummary.succeeded} additional photo(s) added to event gallery.`;
+      }
+      setSuccessMessage(successText);
       resetForm();
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to save marriage event.");
@@ -117,7 +108,6 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
     const nextStatus = ev.status === "published" ? "draft" : "published";
     setActionLoadingId(ev.id);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const res = await fetch(`/api/admin/events/${ev.id}`, {
@@ -144,7 +134,6 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
 
     setActionLoadingId(ev.id);
     setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const res = await fetch(`/api/admin/events/${ev.id}`, { method: "DELETE" });
@@ -209,18 +198,21 @@ export function AdminEventsManager({ initialEvents }: AdminEventsManagerProps) {
           editingId={editingId}
           formData={formData}
           setFormData={setFormData}
-          coverFile={coverFile}
+          selectedFiles={selectedFiles}
+          coverIndex={coverIndex}
           coverPreviewUrl={coverPreviewUrl}
           removeExistingCover={removeExistingCover}
           onClearCover={() => {
-            setCoverFile(null);
+            setSelectedFiles([]);
             setCoverPreviewUrl(null);
             setRemoveExistingCover(true);
           }}
+          onSetCoverIndex={setCoverIndex}
+          onRemoveSelectedFile={handleRemoveSelectedFile}
+          onFilesSelected={handleFilesSelected}
           isSubmitting={isSubmitting}
           onClose={resetForm}
           onSubmit={handleFormSubmit}
-          onFileChange={handleCoverChange}
         />
       )}
 
